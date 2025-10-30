@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { webhookRoutes } from "./webhook/routes";
+import { bapWebhookRoutes } from "./bap-webhook/routes";
 export function createApp() {
   const app = express();
   app.use(cors());
@@ -13,6 +14,7 @@ export function createApp() {
 
   // Mount all routes under the main API router
   apiRouter.use("/webhook", webhookRoutes());
+  apiRouter.use("/bap-webhook", bapWebhookRoutes());
   // Mount the main API router with /api prefix
   apiRouter.use("/health", (req: Request, res: Response) => {
     return res.status(200).json({ message: "OK!" });
