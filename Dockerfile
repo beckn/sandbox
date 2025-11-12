@@ -25,6 +25,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist
+# Copy JSON files (they are not compiled by TypeScript)
+COPY --from=builder /app/src/webhook/jsons ./dist/webhook/jsons
 
 EXPOSE 3000
 

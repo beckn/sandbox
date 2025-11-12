@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFileSync } from "fs";
 import path from "path";
 
 const RESPONSES_BASE_PATH = path.resolve(__dirname, "../webhook/jsons");
@@ -20,10 +20,12 @@ export const readDomainResponse = async (domain: string, action: string) => {
   );
 
   try {
-    const fileContents = await readFile(targetPath, "utf-8");
-    return JSON.parse(fileContents);
-  } catch (error: any) {
+    const fileContents = readFileSync(targetPath, "utf-8");
+    const parsed = JSON.parse(fileContents);
+    return parsed;
+    } catch (error: any) {
     if (error?.code === "ENOENT") {
+      console.warn("File not found, returning empty object");
       return {};
     }
     throw error;
