@@ -4,6 +4,7 @@ services:
     container_name: sandbox-2.0
     image: fidedocker/sandbox-2.0:latest
     environment:
+      - BPP_CALLBACK_ENDPOINT=http://onix-bpp:8082/bpp/caller
       - NODE_ENV=production
       - PORT=3000
     ports:
