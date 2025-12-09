@@ -12,7 +12,7 @@ const getCallbackUrl = (context: any, action: string): string => {
 };
 
 const getPersona = (): string | undefined => {
-  return process.env.BPP_PERSONA;
+  return process.env.PERSONA;
 };
 
 export const onSelect = (req: Request, res: Response) => {
