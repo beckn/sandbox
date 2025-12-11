@@ -100,7 +100,7 @@
             "type": "UNIT",
             "value": 72.73,
             "currency": "INR",
-            "description": "Charging session cost (4.04 kWh @ ₹18.00/kWh)"
+            "description": "Charging session cost (4.04 kWh @ \u20b918.00/kWh)"
           },
           {
             "type": "FEE",
@@ -163,7 +163,6 @@
         "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/core/v2/context.jsonld",
         "@type": "beckn:Payment",
         "beckn:id": "payment-123e4567-e89b-12d3-a456-426614174000",
-        "beckn:status": "PAID",
         "beckn:amount": {
           "currency": "INR",
           "value": 100.0
@@ -176,7 +175,8 @@
           "schema:UPI",
           "schema:Wallet"
         ],
-        "beckn:beneficiary": "BPP"
+        "beckn:beneficiary": "BPP",
+        "beckn:paymentStatus": "COMPLETED"
       },
       "beckn:orderAttributes": {
         "@type": "ChargingSession",

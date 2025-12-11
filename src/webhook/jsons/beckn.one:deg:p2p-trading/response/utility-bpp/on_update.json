@@ -17,21 +17,6 @@
       "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/core/v2/context.jsonld",
       "@type": "beckn:Order",
       "beckn:id": "order-cascaded-utility-001",
-      "beckn:fulfillments": [
-        {
-          "@type": "beckn:Fulfillment",
-          "beckn:id": "fulfillment-energy-001",
-          "beckn:type": "ENERGY_DELIVERY",
-          "beckn:attributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeDelivery/v0.2/context.jsonld",
-            "@type": "EnergyTradeDelivery",
-            "deliveryStatus": "COMPLETED",
-            "deliveredQuantity": 10.0,
-            "deliveryEndTime": "2024-10-04T18:00:00Z",
-            "lastUpdated": "2024-10-04T18:30:00Z"
-          }
-        }
-      ],
       "beckn:orderAttributes": {
         "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeContract/v0.2/context.jsonld",
         "@type": "EnergyTradeContract",
@@ -49,8 +34,38 @@
           }
         ],
         "lastUpdated": "2024-10-04T18:30:00Z"
-      }
+      },
+      "beckn:fulfillment": {
+        "@type": "beckn:Fulfillment",
+        "beckn:id": "fulfillment-energy-001",
+        "beckn:mode": "DELIVERY",
+        "beckn:deliveryAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeDelivery/v0.2/context.jsonld",
+          "@type": "EnergyTradeDelivery",
+          "deliveryStatus": "COMPLETED",
+          "deliveredQuantity": 10.0,
+          "deliveryEndTime": "2024-10-04T18:00:00Z",
+          "lastUpdated": "2024-10-04T18:30:00Z"
+        },
+        "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld"
+      },
+      "beckn:orderStatus": "CREATED",
+      "beckn:buyer": {
+        "beckn:id": "buyer-placeholder",
+        "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+        "@type": "beckn:Buyer"
+      },
+      "beckn:seller": "seller-placeholder",
+      "beckn:orderItems": [
+        {
+          "beckn:lineId": "dummy-line-1",
+          "beckn:orderedItem": "dummy-item-1",
+          "beckn:quantity": {
+            "unitQuantity": 1,
+            "unitText": "unit"
+          }
+        }
+      ]
     }
   }
 }
-
