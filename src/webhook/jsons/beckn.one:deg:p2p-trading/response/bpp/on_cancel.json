@@ -22,8 +22,23 @@
         "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeContract/v0.2/context.jsonld",
         "@type": "EnergyTradeContract",
         "contractStatus": "TERMINATED"
-      }
+      },
+      "beckn:buyer": {
+        "beckn:id": "buyer-placeholder",
+        "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+        "@type": "beckn:Buyer"
+      },
+      "beckn:seller": "seller-placeholder",
+      "beckn:orderItems": [
+        {
+          "beckn:lineId": "dummy-line-1",
+          "beckn:orderedItem": "dummy-item-1",
+          "beckn:quantity": {
+            "unitQuantity": 1,
+            "unitText": "unit"
+          }
+        }
+      ]
     }
   }
 }
-
