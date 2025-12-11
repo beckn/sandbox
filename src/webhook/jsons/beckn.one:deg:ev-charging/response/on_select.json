@@ -25,15 +25,25 @@
       "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/core/v2/context.jsonld",
       "@type": "beckn:Order",
       "beckn:id": "order-ev-charging-001",
-      "beckn:orderStatus": "QUOTE_RECEIVED",
+      "beckn:orderStatus": "PENDING",
       "beckn:orderNumber": "ORD-2024-001",
       "beckn:seller": "ecopower-charging",
-      "beckn:buyer": "user-12345",
+      "beckn:buyer": {
+        "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/core/v2/context.jsonld",
+        "@type": "beckn:Buyer",
+        "beckn:id": "user-12345",
+        "beckn:role": "BUYER",
+        "beckn:displayName": "EV Owner"
+      },
       "beckn:orderItems": [
         {
           "beckn:lineId": "line-001",
           "beckn:orderedItem": "ev-charger-ccs2-001",
-          "beckn:quantity": 2.5,
+          "beckn:quantity": {
+            "unitText": "Kilowatt Hour",
+            "unitCode": "KWH",
+            "unitQuantity": 2.5
+          },
           "beckn:acceptedOffer": {
             "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/core/v2/context.jsonld",
             "@type": "beckn:Offer",
@@ -42,7 +52,10 @@
               "@type": "beckn:Descriptor",
               "schema:name": "Per-kWh Tariff - CCS2 60kW"
             },
-            "beckn:items": ["ev-charger-ccs2-001"],
+            "beckn:items": [
+              "ev-charger-ccs2-001"
+            ],
+            "beckn:provider": "ecopower-charging",
             "beckn:price": {
               "currency": "INR",
               "value": 18.0,
@@ -57,7 +70,11 @@
               "schema:startDate": "2024-10-01T00:00:00Z",
               "schema:endDate": "2025-01-15T23:59:59Z"
             },
-            "beckn:acceptedPaymentMethod": ["UPI", "Card", "Wallet"],
+            "beckn:acceptedPaymentMethod": [
+              "UPI",
+              "CREDIT_CARD",
+              "WALLET"
+            ],
             "beckn:offerAttributes": {
               "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/EvChargingService/v1/context.jsonld",
               "@type": "ChargingOffer",
@@ -120,7 +137,7 @@
         "@type": "beckn:Fulfillment",
         "beckn:id": "fulfillment-charging-001",
         "beckn:mode": "RESERVATION",
-        "beckn:status": "QUOTED",
+        "beckn:fulfillmentStatus": "QUOTED",
         "beckn:deliveryAttributes": {
           "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/draft/schema/EvChargingService/v1/context.jsonld",
           "@type": "ChargingSession",
