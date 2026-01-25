@@ -83,7 +83,12 @@ export const onSelect = (req: Request, res: Response) => {
       }
 
       const responsePayload = {
-        context: { ...context, action: "on_select" },
+        context: {
+          ...context,
+          action: "on_select",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
         message: {
           order: {
             "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
@@ -159,7 +164,12 @@ export const onInit = (req: Request, res: Response) => {
 
       // Build response per P2P Trading implementation guide
       const responsePayload = {
-        context: { ...context, action: "on_init" },
+        context: {
+          ...context,
+          action: "on_init",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
         message: {
           order: {
             "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
@@ -288,7 +298,12 @@ export const onConfirm = (req: Request, res: Response) => {
       // Send on_confirm response with ACTUAL order data (not template)
       // This ensures the ledger receives correct buyer/seller/quantity info
       const responsePayload = {
-        context: { ...context, action: "on_confirm" },
+        context: {
+          ...context,
+          action: "on_confirm",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
         message: {
           order: {
             ...order,
