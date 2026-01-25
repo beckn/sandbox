@@ -128,8 +128,22 @@ export const onInit = (req: Request, res: Response) => {
 
       orderItems.forEach((item: any) => {
         const quantity = item['beckn:quantity']?.unitQuantity || 0;
-        const pricePerUnit = item['beckn:acceptedOffer']?.['beckn:offerAttributes']?.['beckn:price']?.value || 0;
-        currency = item['beckn:acceptedOffer']?.['beckn:offerAttributes']?.['beckn:price']?.currency || 'INR';
+        const acceptedOffer = item['beckn:acceptedOffer'];
+
+        // Support both price formats:
+        // 1. beckn:offerAttributes.beckn:price.value (template format)
+        // 2. beckn:price.schema:price (real offer from on_select)
+        const pricePerUnit =
+          acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.value ||
+          acceptedOffer?.['beckn:price']?.['schema:price'] ||
+          acceptedOffer?.['beckn:price']?.value ||
+          0;
+
+        currency =
+          acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.currency ||
+          acceptedOffer?.['beckn:price']?.['schema:priceCurrency'] ||
+          acceptedOffer?.['beckn:price']?.currency ||
+          'INR';
 
         totalQuantity += quantity;
         totalEnergyCost += quantity * pricePerUnit;
