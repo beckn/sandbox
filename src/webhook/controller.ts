@@ -83,15 +83,17 @@ export const onConfirm = (req: Request, res: Response) => {
     try {
       // Extract order items from confirm message
       const order = message?.order;
-      const orderItems = order?.items || [];
+      const orderItems = order?.['beckn:orderItems'] || order?.items || [];
+
+      console.log(`[Confirm] Processing ${orderItems.length} order items`);
 
       // Reduce inventory for each item and track affected catalogs
       const affectedCatalogs = new Set<string>();
 
       for (const orderItem of orderItems) {
-        const itemId = orderItem['beckn:id'] || orderItem.id;
-        const quantity = orderItem.quantity?.selected?.count ||
-                        orderItem['beckn:quantity']?.['schema:value'] ||
+        const itemId = orderItem['beckn:orderedItem'] || orderItem['beckn:id'] || orderItem.id;
+        const quantity = orderItem['beckn:quantity']?.unitQuantity ||
+                        orderItem.quantity?.selected?.count ||
                         orderItem.quantity || 1;
 
         if (itemId && quantity > 0) {
