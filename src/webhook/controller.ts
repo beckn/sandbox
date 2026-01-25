@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import { readDomainResponse } from "../utils";
+import { catalogStore } from "../services/catalog-store";
 
 const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
@@ -75,30 +77,84 @@ export const onInit = (req: Request, res: Response) => {
 
 export const onConfirm = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_confirm_response.context = { ...context, action: "on_confirm" };
+  const ONIX_BPP_URL = process.env.ONIX_BPP_URL || 'http://onix-bpp:8082';
+
   (async () => {
     try {
+      // Extract order items from confirm message
+      const order = message?.order;
+      const orderItems = order?.items || [];
+
+      // Reduce inventory for each item and track affected catalogs
+      const affectedCatalogs = new Set<string>();
+
+      for (const orderItem of orderItems) {
+        const itemId = orderItem['beckn:id'] || orderItem.id;
+        const quantity = orderItem.quantity?.selected?.count ||
+                        orderItem['beckn:quantity']?.['schema:value'] ||
+                        orderItem.quantity || 1;
+
+        if (itemId && quantity > 0) {
+          console.log(`[Confirm] Reducing inventory: ${itemId} by ${quantity}`);
+
+          // Get item to find its catalog
+          const item = await catalogStore.getItem(itemId);
+          if (item) {
+            await catalogStore.reduceInventory(itemId, quantity);
+            affectedCatalogs.add(item.catalogId);
+            console.log(`[Confirm] Inventory reduced for ${itemId}`);
+          }
+        }
+      }
+
+      // Republish affected catalogs to CDS
+      for (const catalogId of affectedCatalogs) {
+        console.log(`[Confirm] Republishing catalog: ${catalogId}`);
+
+        const catalog = await catalogStore.buildCatalogForPublish(catalogId);
+
+        const publishPayload = {
+          context: {
+            version: "2.0.0",
+            action: "catalog_publish",
+            timestamp: new Date().toISOString(),
+            message_id: uuidv4(),
+            transaction_id: uuidv4(),
+            bap_id: context.bap_id,
+            bap_uri: context.bap_uri,
+            bpp_id: context.bpp_id,
+            bpp_uri: context.bpp_uri,
+            ttl: "PT30S",
+            domain: context.domain
+          },
+          message: {
+            catalogs: [catalog]
+          }
+        };
+
+        const publishUrl = `${ONIX_BPP_URL}/bpp/caller/publish`;
+        const publishRes = await axios.post(publishUrl, publishPayload, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log(`[Confirm] Catalog republished: ${catalogId}`, publishRes.data);
+      }
+
+      // Send on_confirm response
       const template = await readDomainResponse(context.domain, "on_confirm", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_confirm" },
       };
       const callbackUrl = getCallbackUrl(context, "confirm");
-      console.log(
-        "Triggering On Confirm response to:",
-        callbackUrl
-      );
-      const confirm_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
+      console.log("Triggering On Confirm response to:", callbackUrl);
+      const confirm_data = await axios.post(callbackUrl, responsePayload);
       console.log("On Confirm api call response: ", confirm_data.data);
+
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Confirm] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 

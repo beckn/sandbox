@@ -69,5 +69,48 @@ export const catalogStore = {
 
     if (!result) throw new Error(`Insufficient inventory: ${itemId}`);
     return result['beckn:itemAttributes'].availableQuantity;
+  },
+
+  async getItem(itemId: string) {
+    return getDB().collection('items').findOne({ 'beckn:id': itemId });
+  },
+
+  async getCatalog(catalogId: string) {
+    return getDB().collection('catalogs').findOne({ 'beckn:id': catalogId });
+  },
+
+  async getItemsByCatalog(catalogId: string) {
+    return getDB().collection('items').find({ catalogId }).toArray();
+  },
+
+  async getOffersByCatalog(catalogId: string) {
+    return getDB().collection('offers').find({ catalogId }).toArray();
+  },
+
+  async buildCatalogForPublish(catalogId: string) {
+    const catalog = await this.getCatalog(catalogId);
+    if (!catalog) throw new Error(`Catalog not found: ${catalogId}`);
+
+    const items = await this.getItemsByCatalog(catalogId);
+    const offers = await this.getOffersByCatalog(catalogId);
+
+    // Remove MongoDB fields and rebuild catalog structure
+    const cleanItem = (item: any) => {
+      const { _id, catalogId, updatedAt, ...rest } = item;
+      return rest;
+    };
+
+    const cleanOffer = (offer: any) => {
+      const { _id, catalogId, updatedAt, ...rest } = offer;
+      return rest;
+    };
+
+    const { _id, updatedAt, ...catalogBase } = catalog;
+
+    return {
+      ...catalogBase,
+      'beckn:items': items.map(cleanItem),
+      'beckn:offers': offers.map(cleanOffer)
+    };
   }
 };
