@@ -57,6 +57,15 @@ function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
   };
 }
 
+// Validate context has required fields for callback
+function validateContext(context: any): { valid: boolean; error?: string } {
+  if (!context) return { valid: false, error: "Missing context" };
+  if (!context.bpp_uri && !process.env.BPP_CALLBACK_ENDPOINT) {
+    return { valid: false, error: "Missing bpp_uri and no BPP_CALLBACK_ENDPOINT configured" };
+  }
+  return { valid: true };
+}
+
 const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
   if (callbackBase) {
@@ -459,147 +468,221 @@ export const onStatus = (req: Request, res: Response) => {
 
 export const onUpdate = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_update_response.context = { ...context, action: "on_update" };
+
+  // Validate context early
+  const validation = validateContext(context);
+  if (!validation.valid) {
+    console.log(`[Update] Invalid context: ${validation.error}`);
+    return res.status(200).json({
+      message: { ack: { status: "NACK" } },
+      error: { code: "INVALID_CONTEXT", message: validation.error }
+    });
+  }
+
   (async () => {
     try {
       const template = await readDomainResponse(context.domain, "on_update", getPersona());
+
+      // Validate template exists
+      if (!template || Object.keys(template).length === 0) {
+        console.log(`[Update] No template found for domain: ${context.domain}`);
+        return;
+      }
+
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_update" },
+        context: {
+          ...context,
+          action: "on_update",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
       };
       const callbackUrl = getCallbackUrl(context, "update");
-      console.log(
-        "Triggering On Update response to:",
-        callbackUrl
-      );
-      const update_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Update api call response: ", update_data.data);
+      console.log("[Update] Triggering On Update response to:", callbackUrl);
+      const update_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Update] On Update api call response:", update_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Update] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
 export const onRating = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
 
-  // on_rating_response.context = { ...context, action: "on_rating" };
+  // Validate context early
+  const validation = validateContext(context);
+  if (!validation.valid) {
+    console.log(`[Rating] Invalid context: ${validation.error}`);
+    return res.status(200).json({
+      message: { ack: { status: "NACK" } },
+      error: { code: "INVALID_CONTEXT", message: validation.error }
+    });
+  }
+
   (async () => {
     try {
       const template = await readDomainResponse(context.domain, "on_rating", getPersona());
+
+      // Validate template exists
+      if (!template || Object.keys(template).length === 0) {
+        console.log(`[Rating] No template found for domain: ${context.domain}`);
+        return;
+      }
+
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_rating" },
+        context: {
+          ...context,
+          action: "on_rating",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
       };
       const callbackUrl = getCallbackUrl(context, "rating");
-      console.log(
-        "Triggering On Rating response to:",
-        callbackUrl
-      );
-      const rating_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Rating api call response: ", rating_data.data);
+      console.log("[Rating] Triggering On Rating response to:", callbackUrl);
+      const rating_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Rating] On Rating api call response:", rating_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Rating] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
 export const onSupport = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_support_response.context = { ...context, action: "on_support" };
+
+  // Validate context early
+  const validation = validateContext(context);
+  if (!validation.valid) {
+    console.log(`[Support] Invalid context: ${validation.error}`);
+    return res.status(200).json({
+      message: { ack: { status: "NACK" } },
+      error: { code: "INVALID_CONTEXT", message: validation.error }
+    });
+  }
+
   (async () => {
     try {
       const template = await readDomainResponse(context.domain, "on_support", getPersona());
+
+      // Validate template exists
+      if (!template || Object.keys(template).length === 0) {
+        console.log(`[Support] No template found for domain: ${context.domain}`);
+        return;
+      }
+
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_support" },
+        context: {
+          ...context,
+          action: "on_support",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
       };
       const callbackUrl = getCallbackUrl(context, "support");
-      console.log(
-        "Triggering On Support response to:",
-        callbackUrl
-      );
-      const support_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Support api call response: ", support_data.data);
+      console.log("[Support] Triggering On Support response to:", callbackUrl);
+      const support_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Support] On Support api call response:", support_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Support] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
 export const onTrack = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_track_response.context = { ...context, action: "on_track" };
+
+  // Validate context early
+  const validation = validateContext(context);
+  if (!validation.valid) {
+    console.log(`[Track] Invalid context: ${validation.error}`);
+    return res.status(200).json({
+      message: { ack: { status: "NACK" } },
+      error: { code: "INVALID_CONTEXT", message: validation.error }
+    });
+  }
+
   (async () => {
     try {
       const template = await readDomainResponse(context.domain, "on_track", getPersona());
+
+      // Validate template exists
+      if (!template || Object.keys(template).length === 0) {
+        console.log(`[Track] No template found for domain: ${context.domain}`);
+        return;
+      }
+
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_track" },
+        context: {
+          ...context,
+          action: "on_track",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
       };
       const callbackUrl = getCallbackUrl(context, "track");
-      console.log(
-        "Triggering On Track response to:",
-        callbackUrl
-      );
-      const track_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Track api call response: ", track_data.data);
+      console.log("[Track] Triggering On Track response to:", callbackUrl);
+      const track_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Track] On Track api call response:", track_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Track] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
 export const onCancel = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_cancel_response.context = { ...context, action: "on_cancel" };
+
+  // Validate context early
+  const validation = validateContext(context);
+  if (!validation.valid) {
+    console.log(`[Cancel] Invalid context: ${validation.error}`);
+    return res.status(200).json({
+      message: { ack: { status: "NACK" } },
+      error: { code: "INVALID_CONTEXT", message: validation.error }
+    });
+  }
+
   (async () => {
     try {
       const template = await readDomainResponse(context.domain, "on_cancel", getPersona());
+
+      // Validate template exists
+      if (!template || Object.keys(template).length === 0) {
+        console.log(`[Cancel] No template found for domain: ${context.domain}`);
+        return;
+      }
+
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_cancel" },
+        context: {
+          ...context,
+          action: "on_cancel",
+          message_id: uuidv4(),
+          timestamp: new Date().toISOString()
+        },
       };
       const callbackUrl = getCallbackUrl(context, "cancel");
-      console.log(
-        "Triggering On Cancel response to:",
-        callbackUrl
-      );
-      const cancel_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Cancel api call response: ", cancel_data.data);
+      console.log("[Cancel] Triggering On Cancel response to:", callbackUrl);
+      const cancel_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Cancel] On Cancel api call response:", cancel_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Cancel] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
