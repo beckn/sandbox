@@ -141,14 +141,21 @@ export const onConfirm = (req: Request, res: Response) => {
         console.log(`[Confirm] Catalog republished: ${catalogId}`, publishRes.data);
       }
 
-      // Send on_confirm response
-      const template = await readDomainResponse(context.domain, "on_confirm", getPersona());
+      // Send on_confirm response with ACTUAL order data (not template)
+      // This ensures the ledger receives correct buyer/seller/quantity info
       const responsePayload = {
-        ...template,
         context: { ...context, action: "on_confirm" },
+        message: {
+          order: {
+            ...order,
+            "beckn:orderStatus": "CONFIRMED",
+            "beckn:id": order?.['beckn:id'] || `order-${uuidv4()}`,
+          }
+        }
       };
       const callbackUrl = getCallbackUrl(context, "confirm");
       console.log("Triggering On Confirm response to:", callbackUrl);
+      console.log("[Confirm] Sending actual order data:", JSON.stringify(responsePayload.message.order, null, 2));
       const confirm_data = await axios.post(callbackUrl, responsePayload);
       console.log("On Confirm api call response: ", confirm_data.data);
 
