@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import { readDomainResponse } from "../utils";
 import { catalogStore } from "../services/catalog-store";
 
+const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || '1.50'); // INR/kWh
+
 const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
   if (callbackBase) {
@@ -108,30 +110,98 @@ export const onSelect = (req: Request, res: Response) => {
 
 export const onInit = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_init_response.context = { ...context, action: "on_init" };
+
   (async () => {
     try {
-      const template = await readDomainResponse(context.domain, "on_init", getPersona());
+      const order = message?.order;
+      const orderItems = order?.['beckn:orderItems'] || [];
+      const buyer = order?.['beckn:buyer'];
+      const seller = order?.['beckn:seller'];
+      const orderAttributes = order?.['beckn:orderAttributes'];
+
+      console.log(`[Init] Processing ${orderItems.length} order items`);
+
+      // Calculate totals from all items
+      let totalQuantity = 0;
+      let totalEnergyCost = 0;
+      let currency = 'INR';
+
+      orderItems.forEach((item: any) => {
+        const quantity = item['beckn:quantity']?.unitQuantity || 0;
+        const pricePerUnit = item['beckn:acceptedOffer']?.['beckn:offerAttributes']?.['beckn:price']?.value || 0;
+        currency = item['beckn:acceptedOffer']?.['beckn:offerAttributes']?.['beckn:price']?.currency || 'INR';
+
+        totalQuantity += quantity;
+        totalEnergyCost += quantity * pricePerUnit;
+
+        console.log(`[Init] Item ${item['beckn:orderedItem']}: ${quantity} kWh @ ${currency} ${pricePerUnit}/kWh`);
+      });
+
+      // Calculate wheeling charges
+      const wheelingCharges = totalQuantity * WHEELING_RATE;
+      const totalOrderValue = totalEnergyCost + wheelingCharges;
+
+      console.log(`[Init] Total: ${totalQuantity} kWh, Energy: ${currency} ${totalEnergyCost.toFixed(2)}, Wheeling: ${currency} ${wheelingCharges.toFixed(2)}, Total: ${currency} ${totalOrderValue.toFixed(2)}`);
+
+      // Build response per P2P Trading implementation guide
       const responsePayload = {
-        ...template,
         context: { ...context, action: "on_init" },
+        message: {
+          order: {
+            "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+            "@type": "beckn:Order",
+            "beckn:orderStatus": "CREATED",
+            "beckn:seller": seller,
+            "beckn:buyer": buyer,
+            "beckn:orderAttributes": {
+              "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeOrder/v0.2/context.jsonld",
+              "@type": orderAttributes?.['@type'] || "EnergyTradeOrder",
+              "bap_id": context.bap_id,
+              "bpp_id": context.bpp_id,
+              "total_quantity": totalQuantity,
+              // Preserve inter-utility fields if present
+              ...(orderAttributes?.utilityIdBuyer && { "utilityIdBuyer": orderAttributes.utilityIdBuyer }),
+              ...(orderAttributes?.utilityIdSeller && { "utilityIdSeller": orderAttributes.utilityIdSeller })
+            },
+            "beckn:orderItems": orderItems, // Passthrough with accepted offers
+            "beckn:orderValue": {
+              "value": totalOrderValue,
+              "currency": currency,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "description": "Energy Cost",
+                  "value": totalEnergyCost,
+                  "currency": currency
+                },
+                {
+                  "type": "FEE",
+                  "description": "Wheeling Charges",
+                  "value": wheelingCharges,
+                  "currency": currency
+                }
+              ]
+            },
+            "beckn:fulfillment": {
+              "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+              "@type": "beckn:Fulfillment",
+              "beckn:id": `fulfillment-${context.transaction_id || 'energy-001'}`,
+              "beckn:mode": "DELIVERY"
+            }
+          }
+        }
       };
+
       const callbackUrl = getCallbackUrl(context, "init");
-      console.log(
-        "Triggering On Init response to:",
-        callbackUrl
-      );
-      const init_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Init api call response: ", init_data.data);
+      console.log("[Init] Sending on_init to:", callbackUrl);
+      const init_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Init] Response sent:", init_data.data);
+
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Init] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
