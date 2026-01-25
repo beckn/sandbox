@@ -22,17 +22,23 @@ function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
   const deliveredQuantity = Math.round(totalQuantity * progressRatio * 100) / 100;
   const isComplete = progressRatio >= 1;
 
-  // Generate meter readings (one per hour elapsed, max 6)
+  // Generate meter readings per schema: beckn:timeWindow, allocatedEnergy, unit
   const readingCount = Math.min(Math.floor(elapsedHours) + 1, 6);
   const meterReadings = [];
   for (let i = 0; i < readingCount; i++) {
-    const readingTime = new Date(confirmedAt.getTime() + i * 60 * 60 * 1000);
-    const readingQty = (totalQuantity / deliveryDurationHours) * (i + 1);
+    const startTime = new Date(confirmedAt.getTime() + i * 60 * 60 * 1000);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    const allocatedEnergy = Math.round((totalQuantity / deliveryDurationHours) * 100) / 100;
     meterReadings.push({
-      timestamp: readingTime.toISOString(),
-      sourceReading: 1000 + readingQty,
-      targetReading: 990 + readingQty * 0.98, // 2% grid loss
-      energyFlow: Math.round(readingQty * 100) / 100
+      "beckn:timeWindow": {
+        "@type": "beckn:TimePeriod",
+        "schema:startTime": startTime.toISOString(),
+        "schema:endTime": endTime.toISOString()
+      },
+      "allocatedEnergy": allocatedEnergy,
+      "producedEnergy": allocatedEnergy,
+      "consumedEnergy": allocatedEnergy * 0.98, // 2% grid loss
+      "unit": "kWh"
     });
   }
 
@@ -45,19 +51,7 @@ function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
       "deliveryStatus": isComplete ? "COMPLETED" : "IN_PROGRESS",
       "deliveryMode": "GRID_INJECTION",
       "deliveredQuantity": deliveredQuantity,
-      "totalQuantity": totalQuantity,
-      "deliveryStartTime": confirmedAt.toISOString(),
-      ...(isComplete && { "deliveryEndTime": now.toISOString() }),
       "meterReadings": meterReadings,
-      "telemetry": [{
-        "eventTime": now.toISOString(),
-        "metrics": [
-          { "name": "ENERGY", "value": deliveredQuantity, "unitCode": "KWH" },
-          { "name": "POWER", "value": isComplete ? 0 : 2.5, "unitCode": "KW" },
-          { "name": "VOLTAGE", "value": 240.0, "unitCode": "VLT" }
-        ]
-      }],
-      "settlementCycleId": `settle-${confirmedAt.toISOString().split('T')[0]}-001`,
       "lastUpdated": now.toISOString()
     }
   };
