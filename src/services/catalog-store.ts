@@ -1,43 +1,73 @@
-import db from '../db';
+import { getDB } from '../db';
 
 export const catalogStore = {
-  saveCatalog(id: string, bppId: string, data: any) {
-    const stmt = db.prepare(`
-      INSERT OR REPLACE INTO catalogs (id, bpp_id, catalog_data, updated_at)
-      VALUES (?, ?, ?, datetime('now'))
-    `);
-    stmt.run(id, bppId, JSON.stringify(data));
-    console.log(`[DB] Catalog saved: ${id}`);
+  async saveCatalog(catalog: any) {
+    const db = getDB();
+    const catalogId = catalog['beckn:id'];
+
+    await db.collection('catalogs').updateOne(
+      { 'beckn:id': catalogId },
+      { $set: { ...catalog, updatedAt: new Date() } },
+      { upsert: true }
+    );
+
+    console.log(`[DB] Catalog saved: ${catalogId}`);
+    return catalogId;
   },
 
-  saveInventory(itemId: string, catalogId: string, quantity: number) {
-    const stmt = db.prepare(`
-      INSERT OR REPLACE INTO inventory (item_id, catalog_id, available_quantity, updated_at)
-      VALUES (?, ?, ?, datetime('now'))
-    `);
-    stmt.run(itemId, catalogId, quantity);
+  async saveItem(catalogId: string, item: any) {
+    const db = getDB();
+    const itemId = item['beckn:id'];
+
+    await db.collection('items').updateOne(
+      { 'beckn:id': itemId },
+      { $set: { ...item, catalogId, updatedAt: new Date() } },
+      { upsert: true }
+    );
+
+    console.log(`[DB] Item saved: ${itemId}`);
   },
 
-  getInventory(itemId: string) {
-    return db.prepare('SELECT * FROM inventory WHERE item_id = ?').get(itemId);
+  async saveOffer(catalogId: string, offer: any) {
+    const db = getDB();
+    const offerId = offer['beckn:id'];
+
+    await db.collection('offers').updateOne(
+      { 'beckn:id': offerId },
+      { $set: { ...offer, catalogId, updatedAt: new Date() } },
+      { upsert: true }
+    );
+
+    console.log(`[DB] Offer saved: ${offerId}`);
   },
 
-  getAllInventory() {
-    return db.prepare('SELECT * FROM inventory').all();
+  async getAllItems() {
+    return getDB().collection('items').find({}).toArray();
   },
 
-  reduceInventory(itemId: string, amount: number) {
-    const current = this.getInventory(itemId) as any;
-    if (!current) throw new Error(`Item not found: ${itemId}`);
+  async getAllOffers() {
+    return getDB().collection('offers').find({}).toArray();
+  },
 
-    const newQty = current.available_quantity - amount;
-    if (newQty < 0) throw new Error(`Insufficient inventory: ${itemId}`);
+  async getInventory() {
+    return getDB().collection('items').find({}, {
+      projection: {
+        'beckn:id': 1,
+        'beckn:itemAttributes.availableQuantity': 1,
+        catalogId: 1
+      }
+    }).toArray();
+  },
 
-    db.prepare(`
-      UPDATE inventory SET available_quantity = ?, updated_at = datetime('now')
-      WHERE item_id = ?
-    `).run(newQty, itemId);
+  async reduceInventory(itemId: string, amount: number) {
+    const db = getDB();
+    const result = await db.collection('items').findOneAndUpdate(
+      { 'beckn:id': itemId, 'beckn:itemAttributes.availableQuantity': { $gte: amount } },
+      { $inc: { 'beckn:itemAttributes.availableQuantity': -amount } },
+      { returnDocument: 'after' }
+    );
 
-    return newQty;
+    if (!result) throw new Error(`Insufficient inventory: ${itemId}`);
+    return result['beckn:itemAttributes'].availableQuantity;
   }
 };

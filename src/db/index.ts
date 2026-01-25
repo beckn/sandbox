@@ -1,29 +1,30 @@
-import Database, { Database as DatabaseType } from 'better-sqlite3';
+import { MongoClient, Db } from 'mongodb';
 
-const DB_PATH = process.env.DB_PATH || '/app/data/trade.db';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'p2p_trading';
 
-console.log(`[DB] Initializing SQLite at ${DB_PATH}`);
+let db: Db;
 
-const db: DatabaseType = new Database(DB_PATH);
+export async function connectDB(): Promise<Db> {
+  if (db) return db;
 
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS catalogs (
-    id TEXT PRIMARY KEY,
-    bpp_id TEXT NOT NULL,
-    catalog_data TEXT NOT NULL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  );
+  console.log(`[DB] Connecting to MongoDB...`);
+  const client = new MongoClient(MONGO_URI);
+  await client.connect();
+  db = client.db(DB_NAME);
+  console.log(`[DB] Connected to ${DB_NAME}`);
 
-  CREATE TABLE IF NOT EXISTS inventory (
-    item_id TEXT PRIMARY KEY,
-    catalog_id TEXT NOT NULL,
-    available_quantity REAL NOT NULL,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-  );
-`);
+  // Create indexes
+  await db.collection('catalogs').createIndex({ 'beckn:id': 1 }, { unique: true });
+  await db.collection('items').createIndex({ 'beckn:id': 1 }, { unique: true });
+  await db.collection('items').createIndex({ catalogId: 1 });
+  await db.collection('offers').createIndex({ 'beckn:id': 1 }, { unique: true });
+  await db.collection('offers').createIndex({ catalogId: 1 });
 
-console.log(`[DB] Tables created`);
+  return db;
+}
 
-export default db;
+export function getDB(): Db {
+  if (!db) throw new Error('Database not connected');
+  return db;
+}

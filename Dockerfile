@@ -4,9 +4,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install build dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++
-
 # Install dependencies first (use cached layers when possible)
 COPY package.json ./
 RUN npm install
@@ -22,15 +19,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Install build dependencies for better-sqlite3
-RUN apk add --no-cache python3 make g++
-
 # Install only production dependencies
 COPY package.json ./
 RUN npm install --omit=dev && npm cache clean --force
-
-# Create data directory for SQLite
-RUN mkdir -p /app/data
 
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist

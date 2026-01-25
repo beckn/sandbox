@@ -7,52 +7,58 @@ const ONIX_BPP_URL = process.env.ONIX_BPP_URL || 'http://onix-bpp:8082';
 export const tradeRoutes = () => {
   const router = Router();
 
-  // POST /api/trade/publish - Store catalog and forward to ONIX
+  // POST /api/publish - Store catalog and forward to ONIX
   router.post('/publish', async (req: Request, res: Response) => {
-    const { context, message } = req.body;
-
     try {
-      const catalog = message?.catalogs?.[0];
+      const catalog = req.body.message?.catalogs?.[0];
       if (!catalog) {
         return res.status(400).json({ error: 'No catalog in request' });
       }
 
-      const catalogId = catalog['beckn:id'];
-      const bppId = catalog['beckn:bppId'];
+      console.log(`[API] POST /publish - Catalog: ${catalog['beckn:id']}`);
 
-      console.log(`[API] POST /trade/publish - Catalog: ${catalogId}`);
+      // Store in MongoDB
+      const catalogId = await catalogStore.saveCatalog(catalog);
 
-      // Store catalog
-      catalogStore.saveCatalog(catalogId, bppId, catalog);
-
-      // Store inventory items
-      const items = catalog['beckn:items'] || [];
-      for (const item of items) {
-        const itemId = item['beckn:id'];
-        const qty = item['beckn:itemAttributes']?.availableQuantity || 0;
-        catalogStore.saveInventory(itemId, catalogId, qty);
-        console.log(`[API] Inventory stored: ${itemId} = ${qty} kWh`);
+      for (const item of catalog['beckn:items'] || []) {
+        await catalogStore.saveItem(catalogId, item);
       }
 
-      // Forward to ONIX-BPP
-      console.log(`[API] Forwarding to ${ONIX_BPP_URL}/publish`);
-      const onixRes = await axios.post(`${ONIX_BPP_URL}/publish`, req.body, {
+      for (const offer of catalog['beckn:offers'] || []) {
+        await catalogStore.saveOffer(catalogId, offer);
+      }
+
+      // Forward to ONIX BPP
+      const forwardUrl = `${ONIX_BPP_URL}/bpp/caller/publish`;
+      console.log(`[API] Forwarding to ${forwardUrl}`);
+
+      const onixRes = await axios.post(forwardUrl, req.body, {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log(`[API] ONIX response status: ${onixRes.status}`);
       return res.status(200).json(onixRes.data);
-
     } catch (error: any) {
       console.error(`[API] Error:`, error.message);
       return res.status(500).json({ error: error.message });
     }
   });
 
-  // GET /api/trade/inventory - Debug endpoint
-  router.get('/inventory', (req: Request, res: Response) => {
-    const inventory = catalogStore.getAllInventory();
-    return res.json({ items: inventory });
+  // GET /api/inventory
+  router.get('/inventory', async (req: Request, res: Response) => {
+    const items = await catalogStore.getInventory();
+    res.json({ items });
+  });
+
+  // GET /api/items
+  router.get('/items', async (req: Request, res: Response) => {
+    const items = await catalogStore.getAllItems();
+    res.json({ items });
+  });
+
+  // GET /api/offers
+  router.get('/offers', async (req: Request, res: Response) => {
+    const offers = await catalogStore.getAllOffers();
+    res.json({ offers });
   });
 
   return router;
