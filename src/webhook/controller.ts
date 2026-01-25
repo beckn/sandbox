@@ -19,30 +19,90 @@ const getPersona = (): string | undefined => {
 
 export const onSelect = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_select_response.context = { ...context, action: "on_select" };
+
   (async () => {
     try {
-      const template = await readDomainResponse(context.domain, "on_select", getPersona());
+      // Support both formats: message.items (spec) and message.order.beckn:orderItems (actual usage)
+      const selectedItems = message?.items || message?.order?.['beckn:orderItems'] || [];
+      const orderItems: any[] = [];
+      let provider: string | null = null;
+
+      // Extract buyer from request (required in response)
+      const buyer = message?.order?.['beckn:buyer'];
+
+      console.log(`[Select] Processing ${selectedItems.length} items`);
+
+      for (const selectedItem of selectedItems) {
+        // Support both beckn:id and beckn:orderedItem for item ID
+        const itemId = selectedItem['beckn:id'] || selectedItem['beckn:orderedItem'];
+        const requestedQty = selectedItem['beckn:quantity']?.unitQuantity || 0;
+
+        // Fetch actual item from MongoDB
+        const item = await catalogStore.getItem(itemId);
+        if (!item) {
+          console.log(`[Select] Item not found: ${itemId}`);
+          continue;
+        }
+
+        // Check availability
+        const availableQty = item['beckn:itemAttributes']?.availableQuantity || 0;
+        if (requestedQty > availableQty) {
+          console.log(`[Select] Warning: Insufficient qty for ${itemId}: requested ${requestedQty}, available ${availableQty}`);
+        }
+
+        // Fetch ALL offers for this item
+        const offers = await catalogStore.getOffersByItemId(itemId);
+        if (!offers || offers.length === 0) {
+          console.log(`[Select] No offers found for item: ${itemId}`);
+          continue;
+        }
+
+        // Get provider from first offer (or from item)
+        if (!provider) {
+          provider = offers[0]['beckn:provider'] || item['beckn:provider'];
+        }
+
+        // Clean offers for response (remove MongoDB fields)
+        const cleanOffers = offers.map((offer: any) => {
+          const { _id, catalogId, updatedAt, ...cleanOffer } = offer;
+          return cleanOffer;
+        });
+
+        orderItems.push({
+          "beckn:orderedItem": itemId,
+          "beckn:quantity": {
+            "unitQuantity": requestedQty,
+            "unitText": "kWh"
+          },
+          "beckn:availableOffers": cleanOffers
+        });
+
+        console.log(`[Select] Item ${itemId}: ${cleanOffers.length} offer(s) available`);
+      }
+
       const responsePayload = {
-        ...template,
         context: { ...context, action: "on_select" },
+        message: {
+          order: {
+            "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+            "@type": "beckn:Order",
+            "beckn:orderStatus": "CREATED",
+            "beckn:seller": provider,
+            "beckn:buyer": buyer,
+            "beckn:orderItems": orderItems
+          }
+        }
       };
+
       const callbackUrl = getCallbackUrl(context, "select");
-      console.log(
-        "Triggering On Select response to:",
-        callbackUrl
-      );
-      const select_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Select api call response: ", select_data.data);
+      console.log(`[Select] Sending order with ${orderItems.length} item(s) to:`, callbackUrl);
+      const select_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Select] Response sent successfully:", select_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Select] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 

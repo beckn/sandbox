@@ -75,6 +75,13 @@ export const catalogStore = {
     return getDB().collection('items').findOne({ 'beckn:id': itemId });
   },
 
+  async getOffersByItemId(itemId: string) {
+    // Offers have beckn:items array referencing which items they apply to
+    return getDB().collection('offers').find({
+      'beckn:items': itemId
+    }).toArray();
+  },
+
   async getCatalog(catalogId: string) {
     return getDB().collection('catalogs').findOne({ 'beckn:id': catalogId });
   },
