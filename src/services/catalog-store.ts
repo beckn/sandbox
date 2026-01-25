@@ -119,5 +119,28 @@ export const catalogStore = {
       'beckn:items': items.map(cleanItem),
       'beckn:offers': offers.map(cleanOffer)
     };
+  },
+
+  // Order persistence for status tracking
+  async saveOrder(transactionId: string, orderData: any): Promise<void> {
+    const db = getDB();
+    await db.collection('orders').updateOne(
+      { transactionId },
+      {
+        $set: {
+          ...orderData,
+          transactionId,
+          confirmedAt: new Date(),
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true }
+    );
+    console.log(`[DB] Order saved: ${transactionId}`);
+  },
+
+  async getOrderByTransactionId(transactionId: string): Promise<any | null> {
+    const db = getDB();
+    return db.collection('orders').findOne({ transactionId });
   }
 };

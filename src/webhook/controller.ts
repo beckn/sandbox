@@ -6,6 +6,63 @@ import { catalogStore } from "../services/catalog-store";
 
 const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || '1.50'); // INR/kWh
 
+// Calculate delivery progress for on_status based on time elapsed since confirmation
+function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
+  // Get total quantity from order attributes or sum of order items
+  const totalQuantity = order["beckn:orderAttributes"]?.total_quantity ||
+    order["beckn:orderItems"]?.reduce((sum: number, item: any) =>
+      sum + (item["beckn:quantity"]?.unitQuantity || 0), 0) || 10;
+
+  // Simulate delivery over 24 hours
+  const elapsedMs = now.getTime() - confirmedAt.getTime();
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+  const deliveryDurationHours = 24;
+
+  const progressRatio = Math.min(elapsedHours / deliveryDurationHours, 1);
+  const deliveredQuantity = Math.round(totalQuantity * progressRatio * 100) / 100;
+  const isComplete = progressRatio >= 1;
+
+  // Generate meter readings (one per hour elapsed, max 6)
+  const readingCount = Math.min(Math.floor(elapsedHours) + 1, 6);
+  const meterReadings = [];
+  for (let i = 0; i < readingCount; i++) {
+    const readingTime = new Date(confirmedAt.getTime() + i * 60 * 60 * 1000);
+    const readingQty = (totalQuantity / deliveryDurationHours) * (i + 1);
+    meterReadings.push({
+      timestamp: readingTime.toISOString(),
+      sourceReading: 1000 + readingQty,
+      targetReading: 990 + readingQty * 0.98, // 2% grid loss
+      energyFlow: Math.round(readingQty * 100) / 100
+    });
+  }
+
+  return {
+    isComplete,
+    deliveredQuantity,
+    deliveryAttributes: {
+      "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeDelivery/v0.2/context.jsonld",
+      "@type": "EnergyTradeDelivery",
+      "deliveryStatus": isComplete ? "COMPLETED" : "IN_PROGRESS",
+      "deliveryMode": "GRID_INJECTION",
+      "deliveredQuantity": deliveredQuantity,
+      "totalQuantity": totalQuantity,
+      "deliveryStartTime": confirmedAt.toISOString(),
+      ...(isComplete && { "deliveryEndTime": now.toISOString() }),
+      "meterReadings": meterReadings,
+      "telemetry": [{
+        "eventTime": now.toISOString(),
+        "metrics": [
+          { "name": "ENERGY", "value": deliveredQuantity, "unitCode": "KWH" },
+          { "name": "POWER", "value": isComplete ? 0 : 2.5, "unitCode": "KW" },
+          { "name": "VOLTAGE", "value": 240.0, "unitCode": "VLT" }
+        ]
+      }],
+      "settlementCycleId": `settle-${confirmedAt.toISOString().split('T')[0]}-001`,
+      "lastUpdated": now.toISOString()
+    }
+  };
+}
+
 const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
   if (callbackBase) {
@@ -297,6 +354,12 @@ export const onConfirm = (req: Request, res: Response) => {
 
       // Send on_confirm response with ACTUAL order data (not template)
       // This ensures the ledger receives correct buyer/seller/quantity info
+      const confirmedOrder = {
+        ...order,
+        "beckn:orderStatus": "CONFIRMED",
+        "beckn:id": order?.['beckn:id'] || `order-${uuidv4()}`,
+      };
+
       const responsePayload = {
         context: {
           ...context,
@@ -305,16 +368,23 @@ export const onConfirm = (req: Request, res: Response) => {
           timestamp: new Date().toISOString()
         },
         message: {
-          order: {
-            ...order,
-            "beckn:orderStatus": "CONFIRMED",
-            "beckn:id": order?.['beckn:id'] || `order-${uuidv4()}`,
-          }
+          order: confirmedOrder
         }
       };
+
+      // Save order to MongoDB for status tracking
+      await catalogStore.saveOrder(context.transaction_id, {
+        order: confirmedOrder,
+        context: {
+          bap_id: context.bap_id,
+          bpp_id: context.bpp_id,
+          domain: context.domain
+        }
+      });
+
       const callbackUrl = getCallbackUrl(context, "confirm");
       console.log("Triggering On Confirm response to:", callbackUrl);
-      console.log("[Confirm] Sending actual order data:", JSON.stringify(responsePayload.message.order, null, 2));
+      console.log("[Confirm] Sending actual order data:", JSON.stringify(confirmedOrder, null, 2));
       const confirm_data = await axios.post(callbackUrl, responsePayload);
       console.log("On Confirm api call response: ", confirm_data.data);
 
@@ -328,30 +398,68 @@ export const onConfirm = (req: Request, res: Response) => {
 
 export const onStatus = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
-  // on_status_response.context = { ...context, action: "on_status" };
+
   (async () => {
     try {
-      const template = await readDomainResponse(context.domain, "on_status", getPersona());
+      const transactionId = context.transaction_id;
+      const savedOrder = await catalogStore.getOrderByTransactionId(transactionId);
+
+      if (!savedOrder) {
+        console.log(`[Status] Order not found for txn: ${transactionId}`);
+        // Return error response
+        const callbackUrl = getCallbackUrl(context, "status");
+        await axios.post(callbackUrl, {
+          context: {
+            ...context,
+            action: "on_status",
+            message_id: uuidv4(),
+            timestamp: new Date().toISOString()
+          },
+          error: {
+            code: "ORDER_NOT_FOUND",
+            message: `No order found for transaction ${transactionId}`
+          }
+        });
+        return;
+      }
+
+      const order = savedOrder.order;
+      const confirmedAt = new Date(savedOrder.confirmedAt);
+      const now = new Date();
+
+      // Calculate delivery progress based on time elapsed
+      const deliveryProgress = calculateDeliveryProgress(order, confirmedAt, now);
+
+      console.log(`[Status] Order ${transactionId}: ${deliveryProgress.deliveredQuantity} kWh delivered, status: ${deliveryProgress.isComplete ? 'COMPLETED' : 'IN_PROGRESS'}`);
+
       const responsePayload = {
-        ...template,
-        context: { ...context, action: "on_status" },
+        context: {
+          ...context,
+          action: "on_status",
+          message_id: uuidv4(),
+          timestamp: now.toISOString()
+        },
+        message: {
+          order: {
+            ...order,
+            "beckn:orderStatus": deliveryProgress.isComplete ? "COMPLETED" : "INPROGRESS",
+            "beckn:fulfillment": {
+              ...order["beckn:fulfillment"],
+              "beckn:deliveryAttributes": deliveryProgress.deliveryAttributes
+            }
+          }
+        }
       };
+
       const callbackUrl = getCallbackUrl(context, "status");
-      console.log(
-        "Triggering On Status response to:",
-        callbackUrl
-      );
-      const status_data = await axios.post(
-        callbackUrl,
-        responsePayload
-      );
-      console.log("On Status api call response: ", status_data.data);
+      console.log("[Status] Sending on_status to:", callbackUrl);
+      const status_data = await axios.post(callbackUrl, responsePayload);
+      console.log("[Status] Response sent:", status_data.data);
     } catch (error: any) {
-      console.log(error);
-    } finally {
-      return;
+      console.log("[Status] Error:", error.message);
     }
   })();
+
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
