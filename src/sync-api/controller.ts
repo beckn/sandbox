@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import { createPendingTransaction, getPendingCount } from '../services/transaction-store';
+import { createPendingTransaction, getPendingCount, cancelPendingTransaction } from '../services/transaction-store';
 
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
 
@@ -11,17 +11,24 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
   const onixUrl = `${ONIX_BAP_URL}/bap/caller/${action}`;
   console.log(`[SyncAPI] Forwarding ${action} to ${onixUrl}, txn: ${transactionId}`);
 
-  const ackResponse = await axios.post(onixUrl, becknRequest, {
-    headers: { 'Content-Type': 'application/json' },
-    timeout: 10000
-  });
+  try {
+    const ackResponse = await axios.post(onixUrl, becknRequest, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
 
-  if (ackResponse.data?.message?.ack?.status !== 'ACK') {
-    throw new Error(`ONIX returned NACK: ${JSON.stringify(ackResponse.data)}`);
+    if (ackResponse.data?.message?.ack?.status !== 'ACK') {
+      cancelPendingTransaction(transactionId);
+      throw new Error(`ONIX returned NACK: ${JSON.stringify(ackResponse.data)}`);
+    }
+
+    console.log(`[SyncAPI] Received ACK, waiting for on_${action} callback...`);
+    return await callbackPromise;
+  } catch (error) {
+    // Cancel pending transaction to prevent orphaned timeout from crashing the process
+    cancelPendingTransaction(transactionId);
+    throw error;
   }
-
-  console.log(`[SyncAPI] Received ACK, waiting for on_${action} callback...`);
-  return await callbackPromise;
 }
 
 export async function syncSelect(req: Request, res: Response) {

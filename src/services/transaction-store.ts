@@ -34,6 +34,15 @@ export function hasPendingTransaction(transactionId: string): boolean {
   return pendingTransactions.has(transactionId);
 }
 
+export function cancelPendingTransaction(transactionId: string): boolean {
+  const pending = pendingTransactions.get(transactionId);
+  if (!pending) return false;
+
+  clearTimeout(pending.timeout);
+  pendingTransactions.delete(transactionId);
+  return true;
+}
+
 export function getPendingCount(): number {
   return pendingTransactions.size;
 }
