@@ -2,18 +2,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { CalculatedBid, ValidityWindow } from '../types';
 
 /**
- * Generate unique IDs for catalog elements
+ * Generate unique IDs for catalog elements (includes timestamp for uniqueness)
  */
 function generateCatalogId(providerId: string, date: string): string {
-  return `catalog-${providerId}-${date}`;
+  return `catalog-${providerId}-${date}-${Date.now()}`;
 }
 
 function generateItemId(providerId: string, date: string): string {
-  return `item-${providerId}-${date}`;
+  return `item-${providerId}-${date}-${Date.now()}`;
 }
 
 function generateOfferId(providerId: string, date: string): string {
-  return `offer-${providerId}-${date}`;
+  return `offer-${providerId}-${date}-${Date.now()}`;
 }
 
 /**
@@ -205,7 +205,7 @@ export function buildPublishRequest(params: {
       bpp_id: "p2p.terrarexenergy.com",
       bpp_uri: "https://p2p.terrarexenergy.com/bpp/receiver",
       ttl: "PT30S",
-      domain: "beckn.one:deg:p2p-trading-interdiscom:2.0.0"
+      domain: "beckn.one:deg:p2p-trading:2.0.0"
     },
     message: {
       catalogs: [catalog]
