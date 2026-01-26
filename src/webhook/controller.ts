@@ -114,7 +114,7 @@ export const onSelect = (req: Request, res: Response) => {
         if (requestedQty > availableQty) {
           console.log(`[Select] ERROR: Insufficient qty for ${itemId}: requested ${requestedQty}, available ${availableQty}`);
 
-          // Send error response via callback
+          // Send error response via callback (include message: {} for ONIX schema compliance)
           const callbackUrl = getCallbackUrl(context, "select");
           await axios.post(callbackUrl, {
             context: {
@@ -122,6 +122,16 @@ export const onSelect = (req: Request, res: Response) => {
               action: "on_select",
               message_id: uuidv4(),
               timestamp: new Date().toISOString()
+            },
+            message: {
+              order: {
+                "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
+                "@type": "beckn:Order",
+                "beckn:orderStatus": "REJECTED",
+                "beckn:seller": message?.order?.['beckn:seller'] || "unknown",
+                "beckn:buyer": message?.order?.['beckn:buyer'] || { "beckn:id": "unknown" },
+                "beckn:orderItems": []
+              }
             },
             error: {
               code: "INSUFFICIENT_INVENTORY",
@@ -334,7 +344,7 @@ export const onConfirm = (req: Request, res: Response) => {
             if (quantity > availableQty) {
               console.log(`[Confirm] ERROR: Insufficient inventory for ${itemId}: requested ${quantity}, available ${availableQty}`);
 
-              // Send error callback
+              // Send error callback (include message: {} for ONIX schema compliance)
               const callbackUrl = getCallbackUrl(context, "confirm");
               await axios.post(callbackUrl, {
                 context: {
@@ -342,6 +352,13 @@ export const onConfirm = (req: Request, res: Response) => {
                   action: "on_confirm",
                   message_id: uuidv4(),
                   timestamp: new Date().toISOString()
+                },
+                message: {
+                  order: {
+                    ...order,
+                    "beckn:orderStatus": "REJECTED",
+                    "beckn:id": order?.['beckn:id'] || `order-rejected-${uuidv4()}`
+                  }
                 },
                 error: {
                   code: "INSUFFICIENT_INVENTORY",
