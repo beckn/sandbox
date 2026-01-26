@@ -319,11 +319,14 @@ export const onInit = (req: Request, res: Response) => {
             "beckn:buyer": buyer,
             "beckn:orderAttributes": {
               "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeOrder/v0.2/context.jsonld",
-              "@type": "EnergyTradeOrder",  // Always use EnergyTradeOrder (schema doesn't support beckn:OrderAttributes)
+              // Use EnergyTradeOrderInterUtility for inter-discom trades, EnergyTradeOrder otherwise
+              "@type": (orderAttributes?.utilityIdBuyer && orderAttributes?.utilityIdSeller)
+                ? "EnergyTradeOrderInterUtility"
+                : "EnergyTradeOrder",
               "bap_id": context.bap_id,
               "bpp_id": context.bpp_id,
               "total_quantity": totalQuantity,
-              // Preserve inter-utility fields if present
+              // Include inter-utility fields if present
               ...(orderAttributes?.utilityIdBuyer && { "utilityIdBuyer": orderAttributes.utilityIdBuyer }),
               ...(orderAttributes?.utilityIdSeller && { "utilityIdSeller": orderAttributes.utilityIdSeller })
             },
