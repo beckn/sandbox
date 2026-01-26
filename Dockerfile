@@ -27,6 +27,8 @@ RUN npm install --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 # Copy JSON files (they are not compiled by TypeScript)
 COPY --from=builder /app/src/webhook/jsons ./dist/webhook/jsons
+# Copy data folder for forecast files
+COPY data ./data
 
 EXPOSE 3000
 
