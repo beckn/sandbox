@@ -24,12 +24,11 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
     },
     message: {
       text_search: "",
-      filters: [
-        {
-          jsonpath: `$..[?(@.EnergyResource.sourceType=="${sourceType}")]`
-        }
-      ],
-      spatial: {}
+      filters: {
+        type: "jsonpath",
+        expression: `$..[?(@.EnergyResource.sourceType=="${sourceType}")]`
+      },
+      spatial: []
     }
   };
 }
