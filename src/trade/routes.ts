@@ -17,7 +17,7 @@ export const tradeRoutes = () => {
 
       console.log(`[API] POST /publish - Catalog: ${catalog['beckn:id']}`);
 
-      // Store in MongoDB
+      // Store in MongoDB (primary action)
       const catalogId = await catalogStore.saveCatalog(catalog);
 
       for (const item of catalog['beckn:items'] || []) {
@@ -28,15 +28,32 @@ export const tradeRoutes = () => {
         await catalogStore.saveOffer(catalogId, offer);
       }
 
-      // Forward to ONIX BPP
+      // Forward to ONIX BPP (secondary action - don't fail if this fails)
       const forwardUrl = `${ONIX_BPP_URL}/bpp/caller/publish`;
       console.log(`[API] Forwarding to ${forwardUrl}`);
 
-      const onixRes = await axios.post(forwardUrl, req.body, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      let onixResponse = null;
+      let onixError = null;
 
-      return res.status(200).json(onixRes.data);
+      try {
+        const onixRes = await axios.post(forwardUrl, req.body, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000
+        });
+        onixResponse = onixRes.data;
+        console.log(`[API] ONIX forwarding successful`);
+      } catch (error: any) {
+        onixError = error.message;
+        console.warn(`[API] ONIX forwarding failed (catalog saved locally): ${error.message}`);
+      }
+
+      return res.status(200).json({
+        success: true,
+        catalog_id: catalogId,
+        onix_forwarded: onixError === null,
+        onix_error: onixError,
+        onix_response: onixResponse
+      });
     } catch (error: any) {
       console.error(`[API] Error:`, error.message);
       return res.status(500).json({ error: error.message });
