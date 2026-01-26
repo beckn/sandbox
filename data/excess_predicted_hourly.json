@@ -1,0 +1,685 @@
+[
+  {
+    "date": "2026-01-27",
+    "hourly": [
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 29.93
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 96.41
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 155.05
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 183.87
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 203.68
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 195.71
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 188.65
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 144.13
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 40.22
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-01-28",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 20.28
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 86.14
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 166.38
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 170.42
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 190.05
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 182.81
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 168.71
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 125.49
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 21.35
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-01-29",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 10.97
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 66.93
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 160.72
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 172.02
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 190.74
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 182.22
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 166.05
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 119.66
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 20.51
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-01-30",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 19.25
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 82.99
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 172.88
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 176.4
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 193.42
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 185.05
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 173.87
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 127.07
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 35.05
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-01-31",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 26.38
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 61.93
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 169.18
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 164.47
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 184.61
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 179.22
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 86.11
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 67.25
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 34.41
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-02-01",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 21.35
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 88.72
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 165.34
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 161.44
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 188.26
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 153.16
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 161.95
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 51.57
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 19.25
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  },
+  {
+    "date": "2026-02-02",
+    "hourly": [
+      {
+        "hour": "00:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "01:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "02:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "03:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "04:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "05:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "06:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "07:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "08:00",
+        "excess_kwh": 22.77
+      },
+      {
+        "hour": "09:00",
+        "excess_kwh": 90.21
+      },
+      {
+        "hour": "10:00",
+        "excess_kwh": 163.62
+      },
+      {
+        "hour": "11:00",
+        "excess_kwh": 164.05
+      },
+      {
+        "hour": "12:00",
+        "excess_kwh": 192.58
+      },
+      {
+        "hour": "13:00",
+        "excess_kwh": 113.22
+      },
+      {
+        "hour": "14:00",
+        "excess_kwh": 180.26
+      },
+      {
+        "hour": "15:00",
+        "excess_kwh": 133.08
+      },
+      {
+        "hour": "16:00",
+        "excess_kwh": 32.42
+      },
+      {
+        "hour": "17:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "18:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "19:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "20:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "21:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "22:00",
+        "excess_kwh": 0.0
+      },
+      {
+        "hour": "23:00",
+        "excess_kwh": 0.0
+      }
+    ]
+  }
+]

@@ -21,6 +21,16 @@ export async function connectDB(): Promise<Db> {
   await db.collection('offers').createIndex({ 'beckn:id': 1 }, { unique: true });
   await db.collection('offers').createIndex({ catalogId: 1 });
 
+  // Market snapshots for bidding service fallback cache
+  await db.collection('market_snapshots').createIndex(
+    { 'date_range.start': 1, 'date_range.end': 1 },
+    { unique: true }
+  );
+  await db.collection('market_snapshots').createIndex(
+    { fetched_at: 1 },
+    { expireAfterSeconds: 86400 }  // TTL: 24 hours
+  );
+
   return db;
 }
 
