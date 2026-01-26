@@ -114,7 +114,7 @@ export const onSelect = (req: Request, res: Response) => {
         if (requestedQty > availableQty) {
           console.log(`[Select] ERROR: Insufficient qty for ${itemId}: requested ${requestedQty}, available ${availableQty}`);
 
-          // Send error response via callback (include message: {} for ONIX schema compliance)
+          // Send error response via callback (include full order for ONIX schema compliance)
           const callbackUrl = getCallbackUrl(context, "select");
           await axios.post(callbackUrl, {
             context: {
@@ -129,8 +129,16 @@ export const onSelect = (req: Request, res: Response) => {
                 "@type": "beckn:Order",
                 "beckn:orderStatus": "REJECTED",
                 "beckn:seller": message?.order?.['beckn:seller'] || "unknown",
-                "beckn:buyer": message?.order?.['beckn:buyer'] || { "beckn:id": "unknown" },
-                "beckn:orderItems": []
+                "beckn:buyer": message?.order?.['beckn:buyer'] || { "beckn:id": "unknown", "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld", "@type": "beckn:Buyer" },
+                "beckn:orderItems": selectedItems.map((si: any) => ({
+                  "beckn:orderedItem": si['beckn:id'] || si['beckn:orderedItem'],
+                  "beckn:quantity": si['beckn:quantity'] || { unitQuantity: 0, unitText: "kWh" },
+                  "beckn:availableOffers": [],
+                  "beckn:error": {
+                    "code": "INSUFFICIENT_INVENTORY",
+                    "message": `Available: ${availableQty} kWh`
+                  }
+                }))
               }
             },
             error: {
