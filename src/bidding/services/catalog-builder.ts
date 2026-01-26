@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { CalculatedBid, ValidityWindow } from '../types';
 
 /**
@@ -197,8 +198,8 @@ export function buildPublishRequest(params: {
       version: "2.0.0",
       action: "catalog_publish",
       timestamp: new Date().toISOString(),
-      message_id: `msg-bid-publish-${params.bid.date}-${Date.now()}`,
-      transaction_id: `txn-bid-${params.provider_id}-${params.bid.date}`,
+      message_id: uuidv4(),
+      transaction_id: uuidv4(),
       bap_id: "p2p.terrarexenergy.com",
       bap_uri: "https://p2p.terrarexenergy.com/bap/receiver",
       bpp_id: "p2p.terrarexenergy.com",
