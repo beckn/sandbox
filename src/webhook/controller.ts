@@ -314,6 +314,7 @@ export const onInit = (req: Request, res: Response) => {
           order: {
             "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/main/schema/core/v2/context.jsonld",
             "@type": "beckn:Order",
+            "beckn:id": order?.['beckn:id'] || `order-${context.transaction_id || uuidv4()}`,
             "beckn:orderStatus": "CREATED",
             "beckn:seller": seller,
             "beckn:buyer": buyer,
