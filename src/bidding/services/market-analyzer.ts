@@ -11,6 +11,10 @@ const UNDERCUT_PERCENT = parseFloat(process.env.UNDERCUT_PERCENT || String(DEFAU
  * Build discover request for ONIX BAP
  */
 function buildDiscoverRequest(sourceType: string, startDate: string, endDate: string) {
+  // Filter: sourceType, deliveryMode, and availableQuantity > 0
+  // Date filtering done in JavaScript after fetch (JSONPath date comparison is unreliable)
+  const expression = `$[?(@.beckn:itemAttributes.sourceType == '${sourceType}' && @.beckn:itemAttributes.deliveryMode == 'GRID_INJECTION' && @.beckn:itemAttributes.availableQuantity > 0)]`;
+
   return {
     context: {
       version: "2.0.0",
@@ -35,7 +39,7 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
     message: {
       filters: {
         type: "jsonpath",
-        expression: `$[?(@.beckn:itemAttributes.sourceType == '${sourceType}' && @.beckn:itemAttributes.deliveryMode == 'GRID_INJECTION')]`,
+        expression,
         expressionType: "jsonpath"
       }
     }
