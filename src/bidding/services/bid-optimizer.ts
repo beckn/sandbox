@@ -7,6 +7,7 @@ import {
   PlacedBid,
   ProcessedDay,
   CompetitorOffer,
+  SellerInfo,
   FLOOR_PRICE
 } from '../types';
 import { getProcessedForecasts } from './forecast-reader';
@@ -84,6 +85,16 @@ export async function preview(request: BidRequest): Promise<PreviewResponse> {
   if (biddable.length === 0) {
     return {
       success: true,
+      seller: {
+        provider_id: request.provider_id,
+        meter_id: request.meter_id,
+        source_type: request.source_type,
+        total_quantity_kwh: 0,
+        offering_period: {
+          start_date: all.length > 0 ? all[0].date : '',
+          end_date: all.length > 0 ? all[all.length - 1].date : ''
+        }
+      },
       summary: {
         total_days: all.length,
         biddable_days: 0,
@@ -119,8 +130,21 @@ export async function preview(request: BidRequest): Promise<PreviewResponse> {
 
   console.log(`[BidService] Preview complete: ${bids.length} bids, estimated revenue ${summary.total_potential_revenue_inr.toFixed(2)} INR`);
 
+  // Build seller info
+  const seller: SellerInfo = {
+    provider_id: request.provider_id,
+    meter_id: request.meter_id,
+    source_type: request.source_type,
+    total_quantity_kwh: summary.total_quantity_kwh,
+    offering_period: {
+      start_date: biddable[0].date,
+      end_date: biddable[biddable.length - 1].date
+    }
+  };
+
   return {
     success: true,
+    seller,
     summary,
     bids
   };

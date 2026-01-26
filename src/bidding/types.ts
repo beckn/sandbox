@@ -59,6 +59,18 @@ export interface CalculatedBid {
   reasoning: string;
 }
 
+// Seller info for preview response
+export interface SellerInfo {
+  provider_id: string;
+  meter_id: string;
+  source_type: string;
+  total_quantity_kwh: number;
+  offering_period: {
+    start_date: string;
+    end_date: string;
+  };
+}
+
 // Response types
 export interface PreviewSummary {
   total_days: number;
@@ -72,6 +84,7 @@ export interface PreviewSummary {
 
 export interface PreviewResponse {
   success: boolean;
+  seller: SellerInfo;
   summary: PreviewSummary;
   bids: CalculatedBid[];
 }
