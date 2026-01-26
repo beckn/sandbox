@@ -280,7 +280,7 @@ export const onInit = (req: Request, res: Response) => {
             "beckn:buyer": buyer,
             "beckn:orderAttributes": {
               "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeOrder/v0.2/context.jsonld",
-              "@type": orderAttributes?.['@type'] || "EnergyTradeOrder",
+              "@type": "EnergyTradeOrder",  // Always use EnergyTradeOrder (schema doesn't support beckn:OrderAttributes)
               "bap_id": context.bap_id,
               "bpp_id": context.bpp_id,
               "total_quantity": totalQuantity,
