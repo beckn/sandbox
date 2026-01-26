@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
 import { catalogStore } from '../services/catalog-store';
 
 const ONIX_BPP_URL = process.env.ONIX_BPP_URL || 'http://onix-bpp:8082';
+const EXCESS_DATA_PATH = process.env.EXCESS_DATA_PATH || 'data/excess_predicted_hourly.json';
 
 export const tradeRoutes = () => {
   const router = Router();
@@ -76,6 +79,26 @@ export const tradeRoutes = () => {
   router.get('/offers', async (req: Request, res: Response) => {
     const offers = await catalogStore.getAllOffers();
     res.json({ offers });
+  });
+
+  // GET /api/forecast - Return excess predicted hourly data
+  router.get('/forecast', async (req: Request, res: Response) => {
+    try {
+      const filePath = path.resolve(EXCESS_DATA_PATH);
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({
+          error: 'Forecast data not found',
+          path: filePath
+        });
+      }
+
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      res.json(data);
+    } catch (error: any) {
+      console.error(`[API] Error reading forecast:`, error.message);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   return router;
