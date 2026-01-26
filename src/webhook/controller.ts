@@ -232,30 +232,55 @@ export const onInit = (req: Request, res: Response) => {
       let totalEnergyCost = 0;
       let currency = 'INR';
 
-      orderItems.forEach((item: any) => {
+      // Process items - need to await for DB lookups
+      for (const item of orderItems) {
         const quantity = item['beckn:quantity']?.unitQuantity || 0;
         const acceptedOffer = item['beckn:acceptedOffer'];
+        const itemId = item['beckn:orderedItem'];
 
-        // Support both price formats:
+        let pricePerUnit = 0;
+
+        // Support both price formats from acceptedOffer:
         // 1. beckn:offerAttributes.beckn:price.value (template format)
         // 2. beckn:price.schema:price (real offer from on_select)
-        const pricePerUnit =
-          acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.value ||
-          acceptedOffer?.['beckn:price']?.['schema:price'] ||
-          acceptedOffer?.['beckn:price']?.value ||
-          0;
+        if (acceptedOffer) {
+          pricePerUnit =
+            acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.value ||
+            acceptedOffer?.['beckn:price']?.['schema:price'] ||
+            acceptedOffer?.['beckn:price']?.value ||
+            0;
 
-        currency =
-          acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.currency ||
-          acceptedOffer?.['beckn:price']?.['schema:priceCurrency'] ||
-          acceptedOffer?.['beckn:price']?.currency ||
-          'INR';
+          currency =
+            acceptedOffer?.['beckn:offerAttributes']?.['beckn:price']?.currency ||
+            acceptedOffer?.['beckn:price']?.['schema:priceCurrency'] ||
+            acceptedOffer?.['beckn:price']?.currency ||
+            'INR';
+        }
+
+        // If no acceptedOffer or price is 0, look up from our inventory
+        if (pricePerUnit === 0 && itemId) {
+          console.log(`[Init] No acceptedOffer price, looking up item: ${itemId}`);
+          const dbItem = await catalogStore.getItem(itemId);
+          if (dbItem) {
+            // Find offer for this item in our offers collection
+            const offers = await catalogStore.getOffersByItemId(itemId);
+            if (offers && offers.length > 0) {
+              const offer = offers[0];
+              pricePerUnit =
+                offer['beckn:offerAttributes']?.['beckn:price']?.value ||
+                offer['beckn:price']?.['schema:price'] ||
+                offer['beckn:price']?.value ||
+                0;
+              console.log(`[Init] Found offer price from DB: ${pricePerUnit}`);
+            }
+          }
+        }
 
         totalQuantity += quantity;
         totalEnergyCost += quantity * pricePerUnit;
 
-        console.log(`[Init] Item ${item['beckn:orderedItem']}: ${quantity} kWh @ ${currency} ${pricePerUnit}/kWh`);
-      });
+        console.log(`[Init] Item ${itemId}: ${quantity} kWh @ ${currency} ${pricePerUnit}/kWh`);
+      }
 
       // Calculate wheeling charges
       const wheelingCharges = totalQuantity * WHEELING_RATE;
