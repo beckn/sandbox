@@ -65,11 +65,10 @@ export async function previewBid(req: Request, res: Response) {
 
 /**
  * POST /api/bid/confirm
- * Place bids via publish
+ * Place bids via internal /api/publish endpoint
  *
  * Optional params:
  * - max_bids: number - Limit to N bids (default: all 7 days)
- * - skip_onix: boolean - Skip ONIX/CDS forwarding, only save locally (for testing)
  */
 export async function confirmBid(req: Request, res: Response) {
   try {
@@ -87,11 +86,8 @@ export async function confirmBid(req: Request, res: Response) {
     // Optional: limit number of bids (for testing)
     const maxBids = req.body.max_bids ? parseInt(req.body.max_bids) : undefined;
 
-    // Optional: skip ONIX forwarding (for local testing)
-    const skipOnix = req.body.skip_onix === true;
-
-    // Confirm and publish bids
-    const result = await confirm(validation.request!, maxBids, skipOnix);
+    // Confirm and publish bids via internal publish API
+    const result = await confirm(validation.request!, maxBids);
 
     return res.status(200).json(result);
 

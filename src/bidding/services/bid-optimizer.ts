@@ -11,10 +11,10 @@ import {
 } from '../types';
 import { getProcessedForecasts } from './forecast-reader';
 import { fetchMarketData, analyzeCompetitors, calculatePrice } from './market-analyzer';
-import { buildPublishRequest, extractIds, buildCatalog } from './catalog-builder';
-import { catalogStore } from '../../services/catalog-store';
+import { buildPublishRequest, extractIds } from './catalog-builder';
 
-const ONIX_BPP_URL = process.env.ONIX_BPP_URL || 'http://onix-bpp:8082';
+// Internal publish API URL - calls our own /api/publish endpoint
+const SANDBOX_API_URL = process.env.SANDBOX_API_URL || 'http://sandbox-bpp:3002';
 
 /**
  * Calculate bids for all biddable days
@@ -128,14 +128,13 @@ export async function preview(request: BidRequest): Promise<PreviewResponse> {
 
 /**
  * Confirm and publish bids
- * Places bids sequentially, halts on first failure
+ * Places bids sequentially via internal /api/publish endpoint, halts on first failure
  *
  * @param request - Bid request with provider info
  * @param maxBids - Limit number of bids (for testing)
- * @param skipOnix - If true, only save to MongoDB without forwarding to ONIX/CDS
  */
-export async function confirm(request: BidRequest, maxBids?: number, skipOnix?: boolean): Promise<ConfirmResponse> {
-  console.log(`[BidService] Starting confirm for provider: ${request.provider_id}${maxBids ? ` (max ${maxBids} bids)` : ''}${skipOnix ? ' (skip ONIX)' : ''}`);
+export async function confirm(request: BidRequest, maxBids?: number): Promise<ConfirmResponse> {
+  console.log(`[BidService] Starting confirm for provider: ${request.provider_id}${maxBids ? ` (max ${maxBids} bids)` : ''}`);
 
   // First generate preview to get calculated bids
   const previewResult = await preview(request);
@@ -154,7 +153,7 @@ export async function confirm(request: BidRequest, maxBids?: number, skipOnix?: 
   // Limit number of bids if specified
   const bidsToPlace = maxBids ? previewResult.bids.slice(0, maxBids) : previewResult.bids;
 
-  // Place bids sequentially
+  // Place bids sequentially via internal publish API
   for (const bid of bidsToPlace) {
     try {
       console.log(`[BidService] Publishing bid for ${bid.date}...`);
@@ -170,36 +169,17 @@ export async function confirm(request: BidRequest, maxBids?: number, skipOnix?: 
       const catalog = publishRequest.message.catalogs[0];
       const ids = extractIds(catalog);
 
-      // Step 1: Save to MongoDB (always do this)
-      const catalogId = await catalogStore.saveCatalog(catalog);
-      console.log(`[BidService] Saved catalog to MongoDB: ${catalogId}`);
+      // Call internal /api/publish endpoint
+      // This handles MongoDB storage + ONIX forwarding
+      const publishUrl = `${SANDBOX_API_URL}/api/publish`;
+      console.log(`[BidService] Calling publish API: ${publishUrl}`);
 
-      for (const item of catalog['beckn:items'] || []) {
-        await catalogStore.saveItem(catalogId, item);
-      }
+      const response = await axios.post(publishUrl, publishRequest, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60000
+      });
 
-      for (const offer of catalog['beckn:offers'] || []) {
-        await catalogStore.saveOffer(catalogId, offer);
-      }
-
-      // Step 2: Forward to ONIX (optional - skip for testing)
-      if (!skipOnix) {
-        const forwardUrl = `${ONIX_BPP_URL}/bpp/caller/publish`;
-        console.log(`[BidService] Forwarding to ONIX: ${forwardUrl}`);
-
-        try {
-          await axios.post(forwardUrl, publishRequest, {
-            headers: { 'Content-Type': 'application/json' },
-            timeout: 30000
-          });
-          console.log(`[BidService] ONIX forwarding successful`);
-        } catch (onixError: any) {
-          // Log ONIX error but don't fail - catalog is already saved locally
-          console.warn(`[BidService] ONIX forwarding failed (catalog saved locally): ${onixError.message}`);
-        }
-      } else {
-        console.log(`[BidService] Skipping ONIX forwarding (test mode)`);
-      }
+      console.log(`[BidService] Publish API response:`, response.status);
 
       placedBids.push({
         date: bid.date,
