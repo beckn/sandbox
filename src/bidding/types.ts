@@ -32,13 +32,17 @@ export interface CompetitorOffer {
   offer_id: string;
   provider_id: string;
   price_per_kwh: number;
+  quantity_kwh: number;
   source_type: string;
   date: string;
+  validity_window: ValidityWindow;
 }
 
 export interface MarketAnalysis {
   competitors_found: number;
   lowest_competitor_price: number | null;
+  lowest_competitor_quantity_kwh: number | null;
+  lowest_competitor_validity_window: ValidityWindow | null;
   lowest_competitor_id: string | null;
   cached: boolean;
 }

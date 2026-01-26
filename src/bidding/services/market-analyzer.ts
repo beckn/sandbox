@@ -57,6 +57,11 @@ function parseCDSResponse(response: any): CompetitorOffer[] {
 
     for (const catalog of catalogs) {
       const catalogOffers = catalog['beckn:offers'] || [];
+      const catalogItems = catalog['beckn:items'] || [];
+
+      // Get quantity from first item's itemAttributes
+      const firstItem = catalogItems[0];
+      const quantity = firstItem?.['beckn:itemAttributes']?.availableQuantity || 0;
 
       for (const offer of catalogOffers) {
         // Extract price from offer
@@ -69,14 +74,20 @@ function parseCDSResponse(response: any): CompetitorOffer[] {
             offer['beckn:offerAttributes']?.['beckn:timeWindow'];
 
           const startTime = validityWindow?.['schema:startTime'] || validityWindow?.start;
+          const endTime = validityWindow?.['schema:endTime'] || validityWindow?.end;
           const date = startTime ? startTime.split('T')[0] : 'unknown';
 
           offers.push({
             offer_id: offer['beckn:id'] || 'unknown',
             provider_id: offer['beckn:provider'] || catalog['beckn:bppId'] || 'unknown',
             price_per_kwh: parseFloat(price),
+            quantity_kwh: quantity,
             source_type: 'SOLAR',
-            date
+            date,
+            validity_window: {
+              start: startTime || '',
+              end: endTime || ''
+            }
           });
         }
       }
@@ -176,6 +187,8 @@ export function analyzeCompetitors(date: string, allOffers: CompetitorOffer[], c
     return {
       competitors_found: 0,
       lowest_competitor_price: null,
+      lowest_competitor_quantity_kwh: null,
+      lowest_competitor_validity_window: null,
       lowest_competitor_id: null,
       cached
     };
@@ -188,6 +201,8 @@ export function analyzeCompetitors(date: string, allOffers: CompetitorOffer[], c
   return {
     competitors_found: dayOffers.length,
     lowest_competitor_price: lowest.price_per_kwh,
+    lowest_competitor_quantity_kwh: lowest.quantity_kwh,
+    lowest_competitor_validity_window: lowest.validity_window,
     lowest_competitor_id: lowest.offer_id,
     cached
   };
