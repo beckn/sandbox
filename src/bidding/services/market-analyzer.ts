@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { getDB } from '../../db';
 import { CompetitorOffer, MarketAnalysis, MarketSnapshot, FLOOR_PRICE, DEFAULT_UNDERCUT_PERCENT } from '../types';
 
@@ -14,22 +15,21 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
       version: "2.0.0",
       action: "discover",
       timestamp: new Date().toISOString(),
-      message_id: `msg-market-analysis-${Date.now()}`,
-      transaction_id: `txn-market-analysis-${Date.now()}`,
+      message_id: uuidv4(),
+      transaction_id: uuidv4(),
       bap_id: "p2p.terrarexenergy.com",
       bap_uri: "https://p2p.terrarexenergy.com/bap/receiver",
       ttl: "PT30S",
-      domain: "beckn.one:deg:p2p-trading:2.0.0",
-      schema_context: [
-        "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyResource/v0.2/context.jsonld"
-      ]
+      domain: "beckn.one:deg:p2p-trading-interdiscom:2.0.0"
     },
     message: {
-      filters: {
-        type: "jsonpath",
-        expression: `$[?(@.beckn:itemAttributes.sourceType == '${sourceType}' && @.beckn:itemAttributes.deliveryMode == 'GRID_INJECTION')]`,
-        expressionType: "jsonpath"
-      }
+      text_search: "",
+      filters: [
+        {
+          jsonpath: `$..[?(@.EnergyResource.sourceType=="${sourceType}")]`
+        }
+      ],
+      spatial: {}
     }
   };
 }
