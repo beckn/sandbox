@@ -101,6 +101,8 @@ export const onSelect = (req: Request, res: Response) => {
         // Support both beckn:id and beckn:orderedItem for item ID
         const itemId = selectedItem['beckn:id'] || selectedItem['beckn:orderedItem'];
         const requestedQty = selectedItem['beckn:quantity']?.unitQuantity || 0;
+        // Preserve orderItemAttributes from request (buyer's meter info)
+        const orderItemAttributes = selectedItem['beckn:orderItemAttributes'];
 
         // Fetch actual item from MongoDB
         const item = await catalogStore.getItem(itemId);
@@ -173,6 +175,8 @@ export const onSelect = (req: Request, res: Response) => {
             "unitQuantity": requestedQty,
             "unitText": "kWh"
           },
+          // Echo back orderItemAttributes (buyer's meter info) if provided
+          ...(orderItemAttributes && { "beckn:orderItemAttributes": orderItemAttributes }),
           "beckn:availableOffers": cleanOffers
         });
 
