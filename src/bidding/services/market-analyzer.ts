@@ -3,11 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDB } from '../../db';
 import { CompetitorOffer, MarketAnalysis, MarketSnapshot, FLOOR_PRICE, DEFAULT_UNDERCUT_PERCENT } from '../types';
 
-const CDS_URL = process.env.CDS_URL || 'https://34.93.141.21.sslip.io/beckn/discover';
+// Use ONIX BAP for discover (handles signing and routing to CDS)
+const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
 const UNDERCUT_PERCENT = parseFloat(process.env.UNDERCUT_PERCENT || String(DEFAULT_UNDERCUT_PERCENT));
 
 /**
- * Build discover request for CDS
+ * Build discover request for ONIX BAP
  */
 function buildDiscoverRequest(sourceType: string, startDate: string, endDate: string) {
   return {
@@ -19,16 +20,24 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
       transaction_id: uuidv4(),
       bap_id: "p2p.terrarexenergy.com",
       bap_uri: "https://p2p.terrarexenergy.com/bap/receiver",
+      bpp_id: "p2p.terrarexenergy.com",
+      bpp_uri: "https://p2p.terrarexenergy.com/bpp/receiver",
       ttl: "PT30S",
-      domain: "beckn.one:deg:p2p-trading-interdiscom:2.0.0"
+      domain: "beckn.one:deg:p2p-trading:2.0.0",
+      location: {
+        city: { code: "BLR", name: "Bangalore" },
+        country: { code: "IND", name: "India" }
+      },
+      schema_context: [
+        "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyResource/v0.2/context.jsonld"
+      ]
     },
     message: {
-      text_search: "",
       filters: {
         type: "jsonpath",
-        expression: `$..[?(@.EnergyResource.sourceType=="${sourceType}")]`
-      },
-      spatial: []
+        expression: `$[?(@.beckn:itemAttributes.sourceType == '${sourceType}' && @.beckn:itemAttributes.deliveryMode == 'GRID_INJECTION')]`,
+        expressionType: "jsonpath"
+      }
     }
   };
 }
@@ -76,17 +85,18 @@ function parseCDSResponse(response: any): CompetitorOffer[] {
 }
 
 /**
- * Fetch market data from CDS
+ * Fetch market data via ONIX BAP discover
  */
 export async function fetchMarketData(startDate: string, endDate: string, sourceType: string): Promise<CompetitorOffer[]> {
-  console.log(`[BidService] Fetching market data from CDS: ${CDS_URL}`);
+  const discoverUrl = `${ONIX_BAP_URL}/bap/caller/discover`;
+  console.log(`[BidService] Fetching market data via ONIX: ${discoverUrl}`);
 
   try {
     const request = buildDiscoverRequest(sourceType, startDate, endDate);
 
-    const response = await axios.post(CDS_URL, request, {
+    const response = await axios.post(discoverUrl, request, {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 10000  // 10 second timeout
+      timeout: 15000  // 15 second timeout
     });
 
     const offers = parseCDSResponse(response.data);
