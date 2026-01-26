@@ -31,10 +31,7 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
       location: {
         city: { code: "BLR", name: "Bangalore" },
         country: { code: "IND", name: "India" }
-      },
-      schema_context: [
-        "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyResource/v0.2/context.jsonld"
-      ]
+      }
     },
     message: {
       filters: {
