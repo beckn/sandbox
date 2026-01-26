@@ -227,15 +227,16 @@ export const onInit = (req: Request, res: Response) => {
 
       console.log(`[Init] Processing ${orderItems.length} order items`);
 
-      // Calculate totals from all items
+      // Calculate totals from all items and build enriched orderItems with acceptedOffer
       let totalQuantity = 0;
       let totalEnergyCost = 0;
       let currency = 'INR';
+      const enrichedOrderItems: any[] = [];
 
       // Process items - need to await for DB lookups
       for (const item of orderItems) {
         const quantity = item['beckn:quantity']?.unitQuantity || 0;
-        const acceptedOffer = item['beckn:acceptedOffer'];
+        let acceptedOffer = item['beckn:acceptedOffer'];
         const itemId = item['beckn:orderedItem'];
 
         let pricePerUnit = 0;
@@ -258,26 +259,39 @@ export const onInit = (req: Request, res: Response) => {
         }
 
         // If no acceptedOffer or price is 0, look up from our inventory
-        if (pricePerUnit === 0 && itemId) {
-          console.log(`[Init] No acceptedOffer price, looking up item: ${itemId}`);
+        if ((!acceptedOffer || pricePerUnit === 0) && itemId) {
+          console.log(`[Init] No acceptedOffer, looking up item: ${itemId}`);
           const dbItem = await catalogStore.getItem(itemId);
           if (dbItem) {
             // Find offer for this item in our offers collection
             const offers = await catalogStore.getOffersByItemId(itemId);
             if (offers && offers.length > 0) {
               const offer = offers[0];
+              // Remove MongoDB internal fields
+              const { _id, catalogId, updatedAt, ...cleanOffer } = offer;
+              acceptedOffer = cleanOffer;
+
               pricePerUnit =
                 offer['beckn:offerAttributes']?.['beckn:price']?.value ||
                 offer['beckn:price']?.['schema:price'] ||
                 offer['beckn:price']?.value ||
                 0;
-              console.log(`[Init] Found offer price from DB: ${pricePerUnit}`);
+              console.log(`[Init] Found offer from DB: ${offer['beckn:id']}, price: ${pricePerUnit}`);
             }
           }
         }
 
         totalQuantity += quantity;
         totalEnergyCost += quantity * pricePerUnit;
+
+        // Build enriched order item with acceptedOffer per implementation guide
+        const enrichedItem: any = {
+          "beckn:orderedItem": itemId,
+          "beckn:quantity": item['beckn:quantity'],
+          ...(item['beckn:orderItemAttributes'] && { "beckn:orderItemAttributes": item['beckn:orderItemAttributes'] }),
+          ...(acceptedOffer && { "beckn:acceptedOffer": acceptedOffer })
+        };
+        enrichedOrderItems.push(enrichedItem);
 
         console.log(`[Init] Item ${itemId}: ${quantity} kWh @ ${currency} ${pricePerUnit}/kWh`);
       }
@@ -313,7 +327,7 @@ export const onInit = (req: Request, res: Response) => {
               ...(orderAttributes?.utilityIdBuyer && { "utilityIdBuyer": orderAttributes.utilityIdBuyer }),
               ...(orderAttributes?.utilityIdSeller && { "utilityIdSeller": orderAttributes.utilityIdSeller })
             },
-            "beckn:orderItems": orderItems, // Passthrough with accepted offers
+            "beckn:orderItems": enrichedOrderItems, // Enriched with acceptedOffer from DB lookup
             "beckn:orderValue": {
               "value": totalOrderValue,
               "currency": currency,
