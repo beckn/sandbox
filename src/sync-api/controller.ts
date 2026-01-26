@@ -42,6 +42,16 @@ export async function syncSelect(req: Request, res: Response) {
 
     const response = await executeAndWait('select', becknRequest, transactionId);
 
+    // Check for error in response (e.g., insufficient inventory)
+    if (response.error) {
+      console.log(`[SyncAPI] syncSelect business error:`, response.error);
+      return res.status(400).json({
+        success: false,
+        transaction_id: transactionId,
+        error: response.error
+      });
+    }
+
     return res.status(200).json({
       success: true,
       transaction_id: transactionId,
@@ -91,6 +101,16 @@ export async function syncConfirm(req: Request, res: Response) {
     };
 
     const response = await executeAndWait('confirm', becknRequest, transactionId);
+
+    // Check for error in response (e.g., insufficient inventory)
+    if (response.error) {
+      console.log(`[SyncAPI] syncConfirm business error:`, response.error);
+      return res.status(400).json({
+        success: false,
+        transaction_id: transactionId,
+        error: response.error
+      });
+    }
 
     return res.status(200).json({
       success: true,

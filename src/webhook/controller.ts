@@ -7,7 +7,8 @@ import { catalogStore } from "../services/catalog-store";
 const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || '1.50'); // INR/kWh
 
 // Calculate delivery progress for on_status based on time elapsed since confirmation
-function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
+// Exported for testing
+export function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
   // Get total quantity from order attributes or sum of order items
   const totalQuantity = order["beckn:orderAttributes"]?.total_quantity ||
     order["beckn:orderItems"]?.reduce((sum: number, item: any) =>
@@ -58,7 +59,8 @@ function calculateDeliveryProgress(order: any, confirmedAt: Date, now: Date) {
 }
 
 // Validate context has required fields for callback
-function validateContext(context: any): { valid: boolean; error?: string } {
+// Exported for testing
+export function validateContext(context: any): { valid: boolean; error?: string } {
   if (!context) return { valid: false, error: "Missing context" };
   if (!context.bpp_uri && !process.env.BPP_CALLBACK_ENDPOINT) {
     return { valid: false, error: "Missing bpp_uri and no BPP_CALLBACK_ENDPOINT configured" };
@@ -66,7 +68,8 @@ function validateContext(context: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
-const getCallbackUrl = (context: any, action: string): string => {
+// Exported for testing
+export const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
   if (callbackBase) {
     return `${callbackBase.replace(/\/$/, '')}/on_${action}`;
@@ -106,10 +109,26 @@ export const onSelect = (req: Request, res: Response) => {
           continue;
         }
 
-        // Check availability
+        // Check availability - REJECT if insufficient
         const availableQty = item['beckn:itemAttributes']?.availableQuantity || 0;
         if (requestedQty > availableQty) {
-          console.log(`[Select] Warning: Insufficient qty for ${itemId}: requested ${requestedQty}, available ${availableQty}`);
+          console.log(`[Select] ERROR: Insufficient qty for ${itemId}: requested ${requestedQty}, available ${availableQty}`);
+
+          // Send error response via callback
+          const callbackUrl = getCallbackUrl(context, "select");
+          await axios.post(callbackUrl, {
+            context: {
+              ...context,
+              action: "on_select",
+              message_id: uuidv4(),
+              timestamp: new Date().toISOString()
+            },
+            error: {
+              code: "INSUFFICIENT_INVENTORY",
+              message: `Insufficient quantity for ${itemId}: requested ${requestedQty} kWh, available ${availableQty} kWh`
+            }
+          });
+          return; // Stop processing
         }
 
         // Fetch ALL offers for this item
@@ -300,6 +319,40 @@ export const onConfirm = (req: Request, res: Response) => {
       const orderItems = order?.['beckn:orderItems'] || order?.items || [];
 
       console.log(`[Confirm] Processing ${orderItems.length} order items`);
+
+      // PRE-CHECK: Validate inventory BEFORE reducing
+      for (const orderItem of orderItems) {
+        const itemId = orderItem['beckn:orderedItem'] || orderItem['beckn:id'] || orderItem.id;
+        const quantity = orderItem['beckn:quantity']?.unitQuantity ||
+                        orderItem.quantity?.selected?.count ||
+                        orderItem.quantity || 1;
+
+        if (itemId && quantity > 0) {
+          const item = await catalogStore.getItem(itemId);
+          if (item) {
+            const availableQty = item['beckn:itemAttributes']?.availableQuantity || 0;
+            if (quantity > availableQty) {
+              console.log(`[Confirm] ERROR: Insufficient inventory for ${itemId}: requested ${quantity}, available ${availableQty}`);
+
+              // Send error callback
+              const callbackUrl = getCallbackUrl(context, "confirm");
+              await axios.post(callbackUrl, {
+                context: {
+                  ...context,
+                  action: "on_confirm",
+                  message_id: uuidv4(),
+                  timestamp: new Date().toISOString()
+                },
+                error: {
+                  code: "INSUFFICIENT_INVENTORY",
+                  message: `Cannot confirm order: insufficient inventory for ${itemId}. Requested ${quantity} kWh, available ${availableQty} kWh`
+                }
+              });
+              return; // Stop processing - don't confirm the order
+            }
+          }
+        }
+      }
 
       // Reduce inventory for each item and track affected catalogs
       const affectedCatalogs = new Set<string>();
