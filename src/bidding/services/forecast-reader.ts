@@ -76,8 +76,8 @@ function deriveValidityWindow(day: DailyForecast): ValidityWindow {
  * - Derive validity window
  */
 export function processDailyForecast(day: DailyForecast): ProcessedDay {
-  // Sum all hourly excess values
-  const rawTotal = day.hourly.reduce((sum, h) => sum + h.excess_kwh, 0);
+  // Sum all hourly excess values (round to 2 decimals)
+  const rawTotal = Math.round(day.hourly.reduce((sum, h) => sum + h.excess_kwh, 0) * 100) / 100;
 
   // Apply 10% buffer (multiply by 0.9)
   const bufferedQuantity = Math.round(rawTotal * BUFFER_RATE * 100) / 100;
