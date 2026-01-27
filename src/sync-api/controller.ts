@@ -70,9 +70,47 @@ export async function syncInit(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
 
+    // Validate required inter-utility fields for init
+    const orderAttributes = req.body.message?.order?.['beckn:orderAttributes'];
+    const utilityIdBuyer = orderAttributes?.utilityIdBuyer;
+    const utilityIdSeller = orderAttributes?.utilityIdSeller;
+
+    if (!utilityIdBuyer || utilityIdBuyer.trim() === '') {
+      console.log(`[SyncAPI] syncInit validation error: missing utilityIdBuyer`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_REQUIRED_FIELD',
+          message: 'utilityIdBuyer is required in beckn:orderAttributes for inter-discom trading'
+        }
+      });
+    }
+
+    if (!utilityIdSeller || utilityIdSeller.trim() === '') {
+      console.log(`[SyncAPI] syncInit validation error: missing utilityIdSeller`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_REQUIRED_FIELD',
+          message: 'utilityIdSeller is required in beckn:orderAttributes for inter-discom trading'
+        }
+      });
+    }
+
+    // Ensure @type is EnergyTradeOrderInterUtility for inter-discom
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId }
+      context: { ...req.body.context, transaction_id: transactionId },
+      message: {
+        ...req.body.message,
+        order: {
+          ...req.body.message?.order,
+          'beckn:orderAttributes': {
+            ...orderAttributes,
+            '@type': 'EnergyTradeOrderInterUtility'
+          }
+        }
+      }
     };
 
     const response = await executeAndWait('init', becknRequest, transactionId);
@@ -95,9 +133,47 @@ export async function syncConfirm(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
 
+    // Validate required inter-utility fields for confirm
+    const orderAttributes = req.body.message?.order?.['beckn:orderAttributes'];
+    const utilityIdBuyer = orderAttributes?.utilityIdBuyer;
+    const utilityIdSeller = orderAttributes?.utilityIdSeller;
+
+    if (!utilityIdBuyer || utilityIdBuyer.trim() === '') {
+      console.log(`[SyncAPI] syncConfirm validation error: missing utilityIdBuyer`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_REQUIRED_FIELD',
+          message: 'utilityIdBuyer is required in beckn:orderAttributes for inter-discom trading'
+        }
+      });
+    }
+
+    if (!utilityIdSeller || utilityIdSeller.trim() === '') {
+      console.log(`[SyncAPI] syncConfirm validation error: missing utilityIdSeller`);
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'MISSING_REQUIRED_FIELD',
+          message: 'utilityIdSeller is required in beckn:orderAttributes for inter-discom trading'
+        }
+      });
+    }
+
+    // Ensure @type is EnergyTradeOrderInterUtility for inter-discom
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId }
+      context: { ...req.body.context, transaction_id: transactionId },
+      message: {
+        ...req.body.message,
+        order: {
+          ...req.body.message?.order,
+          'beckn:orderAttributes': {
+            ...orderAttributes,
+            '@type': 'EnergyTradeOrderInterUtility'
+          }
+        }
+      }
     };
 
     const response = await executeAndWait('confirm', becknRequest, transactionId);
