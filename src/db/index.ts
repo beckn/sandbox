@@ -31,6 +31,23 @@ export async function connectDB(): Promise<Db> {
     { expireAfterSeconds: 86400 }  // TTL: 24 hours
   );
 
+  // Settlements collection for ledger tracking
+  await db.collection('settlements').createIndex(
+    { transactionId: 1 },
+    { unique: true }
+  );
+  await db.collection('settlements').createIndex({ settlementStatus: 1 });
+  await db.collection('settlements').createIndex({ createdAt: 1 });
+  await db.collection('settlements').createIndex(
+    { settlementStatus: 1, onSettleNotified: 1 }
+  );
+
+  // Orders collection index for transaction lookup
+  await db.collection('orders').createIndex(
+    { transactionId: 1 },
+    { unique: true }
+  );
+
   return db;
 }
 

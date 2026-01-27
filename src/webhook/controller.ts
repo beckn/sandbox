@@ -3,6 +3,8 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { readDomainResponse } from "../utils";
 import { catalogStore } from "../services/catalog-store";
+import { settlementStore } from "../services/settlement-store";
+import { settlementPoller } from "../services/settlement-poller";
 
 const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || '1.50'); // INR/kWh
 
@@ -510,6 +512,25 @@ export const onConfirm = (req: Request, res: Response) => {
         }
       });
 
+      // Create settlement record for ledger tracking
+      const totalQuantity = orderItems.reduce((sum: number, item: any) => {
+        const qty = item['beckn:quantity']?.unitQuantity ||
+                   item.quantity?.selected?.count ||
+                   item.quantity || 0;
+        return sum + qty;
+      }, 0);
+
+      const orderItemId = orderItems[0]?.['beckn:orderedItem'] ||
+                         orderItems[0]?.['beckn:id'] ||
+                         `item-${context.transaction_id}`;
+
+      await settlementStore.createSettlement(
+        context.transaction_id,
+        orderItemId,
+        totalQuantity
+      );
+      console.log(`[Confirm] Settlement record created: txn=${context.transaction_id}, qty=${totalQuantity}`);
+
       const callbackUrl = getCallbackUrl(context, "confirm");
       console.log("Triggering On Confirm response to:", callbackUrl);
       console.log("[Confirm] Sending actual order data:", JSON.stringify(confirmedOrder, null, 2));
@@ -555,10 +576,70 @@ export const onStatus = (req: Request, res: Response) => {
       const confirmedAt = new Date(savedOrder.confirmedAt);
       const now = new Date();
 
-      // Calculate delivery progress based on time elapsed
-      const deliveryProgress = calculateDeliveryProgress(order, confirmedAt, now);
+      // Try to get settlement data from ledger
+      const settlement = await settlementStore.getSettlement(transactionId);
 
-      console.log(`[Status] Order ${transactionId}: ${deliveryProgress.deliveredQuantity} kWh delivered, status: ${deliveryProgress.isComplete ? 'COMPLETED' : 'IN_PROGRESS'}`);
+      let deliveryStatus: string;
+      let deliveredQuantity: number;
+      let settlementInfo: any = null;
+      let deliveryAttributes: any;
+
+      if (settlement?.settlementStatus === 'SETTLED') {
+        // Use ledger data for settled orders
+        deliveryStatus = 'COMPLETED';
+        deliveredQuantity = settlement.actualDelivered ?? settlement.contractedQuantity;
+        settlementInfo = {
+          settlementCycleId: settlement.settlementCycleId,
+          settledAt: settlement.settledAt?.toISOString(),
+          deviationKwh: settlement.deviationKwh
+        };
+
+        deliveryAttributes = {
+          "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeDelivery/v0.2/context.jsonld",
+          "@type": "EnergyTradeDelivery",
+          "deliveryStatus": "COMPLETED",
+          "deliveryMode": "GRID_INJECTION",
+          "deliveredQuantity": deliveredQuantity,
+          "contractedQuantity": settlement.contractedQuantity,
+          "deviationKwh": settlement.deviationKwh,
+          "settlementCycleId": settlement.settlementCycleId,
+          "lastUpdated": settlement.settledAt?.toISOString() || now.toISOString()
+        };
+
+        console.log(`[Status] Order ${transactionId}: SETTLED via ledger, delivered=${deliveredQuantity} kWh`);
+      } else if (settlement?.ledgerData) {
+        // Use partial ledger data for in-progress orders
+        deliveryStatus = 'IN_PROGRESS';
+        deliveredQuantity = settlement.actualDelivered ??
+          calculatePartialDelivery(settlement.contractedQuantity, confirmedAt, now);
+        settlementInfo = {
+          buyerDiscomStatus: settlement.buyerDiscomStatus,
+          sellerDiscomStatus: settlement.sellerDiscomStatus,
+          ledgerSyncedAt: settlement.ledgerSyncedAt?.toISOString()
+        };
+
+        deliveryAttributes = {
+          "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeDelivery/v0.2/context.jsonld",
+          "@type": "EnergyTradeDelivery",
+          "deliveryStatus": "IN_PROGRESS",
+          "deliveryMode": "GRID_INJECTION",
+          "deliveredQuantity": deliveredQuantity,
+          "contractedQuantity": settlement.contractedQuantity,
+          "buyerDiscomStatus": settlement.buyerDiscomStatus,
+          "sellerDiscomStatus": settlement.sellerDiscomStatus,
+          "lastUpdated": settlement.ledgerSyncedAt?.toISOString() || now.toISOString()
+        };
+
+        console.log(`[Status] Order ${transactionId}: IN_PROGRESS with ledger data, delivered=${deliveredQuantity} kWh`);
+      } else {
+        // Fall back to time-based simulation when no ledger data
+        const deliveryProgress = calculateDeliveryProgress(order, confirmedAt, now);
+        deliveryStatus = deliveryProgress.isComplete ? 'COMPLETED' : 'IN_PROGRESS';
+        deliveredQuantity = deliveryProgress.deliveredQuantity;
+        deliveryAttributes = deliveryProgress.deliveryAttributes;
+
+        console.log(`[Status] Order ${transactionId}: ${deliveredQuantity} kWh (simulated), status: ${deliveryStatus}`);
+      }
 
       const responsePayload = {
         context: {
@@ -570,11 +651,12 @@ export const onStatus = (req: Request, res: Response) => {
         message: {
           order: {
             ...order,
-            "beckn:orderStatus": deliveryProgress.isComplete ? "COMPLETED" : "INPROGRESS",
+            "beckn:orderStatus": deliveryStatus === 'COMPLETED' ? "COMPLETED" : "INPROGRESS",
             "beckn:fulfillment": {
               ...order["beckn:fulfillment"],
-              "beckn:deliveryAttributes": deliveryProgress.deliveryAttributes
-            }
+              "beckn:deliveryAttributes": deliveryAttributes
+            },
+            ...(settlementInfo && { "beckn:settlementInfo": settlementInfo })
           }
         }
       };
@@ -590,6 +672,15 @@ export const onStatus = (req: Request, res: Response) => {
 
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
+
+// Helper function to calculate partial delivery based on time elapsed
+function calculatePartialDelivery(contractedQuantity: number, confirmedAt: Date, now: Date): number {
+  const elapsedMs = now.getTime() - confirmedAt.getTime();
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+  const deliveryDurationHours = 24;
+  const progressRatio = Math.min(elapsedHours / deliveryDurationHours, 1);
+  return Math.round(contractedQuantity * progressRatio * 100) / 100;
+}
 
 export const onUpdate = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;

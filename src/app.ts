@@ -7,10 +7,14 @@ import { tradeRoutes } from "./trade/routes";
 import { syncApiRoutes } from "./sync-api/routes";
 import { biddingRoutes } from "./bidding/routes";
 import { connectDB } from "./db";
+import { startPolling, stopPolling } from "./services/settlement-poller";
 
 export async function createApp() {
   // Connect to MongoDB on startup
   await connectDB();
+
+  // Start settlement polling service
+  startPolling();
 
   const app = express();
   app.use(cors());
@@ -38,6 +42,16 @@ export async function createApp() {
     req?.log?.error?.(err);
     res.status(err.status || 500).json({ error: "internal_error" });
   });
+
+  // Graceful shutdown handler
+  const shutdown = () => {
+    console.log('[App] Shutting down...');
+    stopPolling();
+    process.exit(0);
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 
   return app;
 }
