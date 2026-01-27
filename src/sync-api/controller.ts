@@ -5,6 +5,50 @@ import { createPendingTransaction, getPendingCount, cancelPendingTransaction } f
 
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
 
+/**
+ * Check if ONIX response indicates ACK.
+ * Handles both normal JSON response and malformed string responses.
+ */
+function isAckResponse(data: any): { isAck: boolean; reason: string } {
+  // Log the raw data type and value for debugging
+  console.log(`[SyncAPI] ACK check - data type: ${typeof data}`);
+
+  // Case 1: Normal JSON object with message.ack.status
+  if (data && typeof data === 'object') {
+    const status = data?.message?.ack?.status;
+    console.log(`[SyncAPI] ACK check - JSON path status: ${status}`);
+    if (status === 'ACK') {
+      return { isAck: true, reason: 'JSON path message.ack.status === ACK' };
+    }
+    if (status === 'NACK') {
+      return { isAck: false, reason: 'JSON path message.ack.status === NACK' };
+    }
+  }
+
+  // Case 2: String response (possibly malformed JSON from proxy)
+  if (typeof data === 'string') {
+    console.log(`[SyncAPI] ACK check - string response (length: ${data.length}): ${data.substring(0, 200)}...`);
+
+    // Check for NACK first (takes priority)
+    // Look for "status":"NACK" pattern (exact JSON format)
+    if (data.includes('"status":"NACK"') || data.includes('"status": "NACK"')) {
+      return { isAck: false, reason: 'String contains "status":"NACK"' };
+    }
+
+    // Check for ACK pattern
+    // Look for "status":"ACK" pattern (exact JSON format to avoid substring issues)
+    if (data.includes('"status":"ACK"') || data.includes('"status": "ACK"')) {
+      return { isAck: true, reason: 'String contains "status":"ACK"' };
+    }
+
+    return { isAck: false, reason: 'String does not contain valid ACK pattern' };
+  }
+
+  // Case 3: Unknown format
+  console.log(`[SyncAPI] ACK check - unknown format: ${JSON.stringify(data)}`);
+  return { isAck: false, reason: `Unknown response format: ${typeof data}` };
+}
+
 async function executeAndWait(action: string, becknRequest: any, transactionId: string): Promise<any> {
   const callbackPromise = createPendingTransaction(transactionId, action);
 
@@ -17,9 +61,12 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
       timeout: 10000
     });
 
-    if (ackResponse.data?.message?.ack?.status !== 'ACK') {
+    const ackCheck = isAckResponse(ackResponse.data);
+    console.log(`[SyncAPI] ACK check result: isAck=${ackCheck.isAck}, reason=${ackCheck.reason}`);
+
+    if (!ackCheck.isAck) {
       cancelPendingTransaction(transactionId);
-      throw new Error(`ONIX returned NACK: ${JSON.stringify(ackResponse.data)}`);
+      throw new Error(`ONIX returned NACK (${ackCheck.reason}): ${JSON.stringify(ackResponse.data)}`);
     }
 
     console.log(`[SyncAPI] Received ACK, waiting for on_${action} callback...`);
