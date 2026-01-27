@@ -3,10 +3,18 @@ import { LedgerRecord } from './ledger-client';
 
 export type SettlementStatus = 'PENDING' | 'BUYER_COMPLETED' | 'SELLER_COMPLETED' | 'SETTLED';
 export type DiscomStatus = 'PENDING' | 'COMPLETED';
+export type TradeRole = 'BUYER' | 'SELLER';
 
 export interface SettlementDocument {
   transactionId: string;
   orderItemId: string;
+
+  // Role: BUYER (BAP side) or SELLER (BPP side)
+  role: TradeRole;
+
+  // Counterparty info
+  counterpartyPlatformId: string | null;
+  counterpartyDiscomId: string | null;
 
   // Ledger sync state
   ledgerSyncedAt: Date | null;
@@ -80,11 +88,15 @@ function generateSettlementCycleId(): string {
 export const settlementStore = {
   /**
    * Create a new settlement record when order is confirmed
+   * @param role - BUYER (BAP side) or SELLER (BPP side), defaults to SELLER for backward compatibility
    */
   async createSettlement(
     transactionId: string,
     orderItemId: string,
-    contractedQuantity: number
+    contractedQuantity: number,
+    role: TradeRole = 'SELLER',
+    counterpartyPlatformId: string | null = null,
+    counterpartyDiscomId: string | null = null
   ): Promise<SettlementDocument> {
     const db = getDB();
     const now = new Date();
@@ -92,6 +104,9 @@ export const settlementStore = {
     const settlement: SettlementDocument = {
       transactionId,
       orderItemId,
+      role,
+      counterpartyPlatformId,
+      counterpartyDiscomId,
       ledgerSyncedAt: null,
       ledgerData: null,
       settlementStatus: 'PENDING',
@@ -108,21 +123,33 @@ export const settlementStore = {
     };
 
     await db.collection('settlements').updateOne(
-      { transactionId },
+      { transactionId, role },
       { $setOnInsert: settlement },
       { upsert: true }
     );
 
-    console.log(`[SettlementStore] Created settlement: txn=${transactionId}, qty=${contractedQuantity}`);
+    console.log(`[SettlementStore] Created settlement: txn=${transactionId}, role=${role}, qty=${contractedQuantity}`);
     return settlement;
   },
 
   /**
-   * Get settlement by transaction ID
+   * Get settlement by transaction ID and optional role
    */
-  async getSettlement(transactionId: string): Promise<SettlementDocument | null> {
+  async getSettlement(transactionId: string, role?: TradeRole): Promise<SettlementDocument | null> {
     const db = getDB();
-    return db.collection<SettlementDocument>('settlements').findOne({ transactionId });
+    const query: any = { transactionId };
+    if (role) query.role = role;
+    return db.collection<SettlementDocument>('settlements').findOne(query);
+  },
+
+  /**
+   * Get all settlements for a transaction (both buyer and seller if they exist)
+   */
+  async getSettlementsByTransaction(transactionId: string): Promise<SettlementDocument[]> {
+    const db = getDB();
+    return db.collection<SettlementDocument>('settlements')
+      .find({ transactionId })
+      .toArray();
   },
 
   /**

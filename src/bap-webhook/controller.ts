@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import axios from "axios";
 import { resolvePendingTransaction, hasPendingTransaction } from "../services/transaction-store";
+import { settlementStore } from "../services/settlement-store";
 
 export const onSelect = (req: Request, res: Response) => {
   const { context, message, error }: { context: any; message: any; error?: any } = req.body;
@@ -57,6 +58,42 @@ export const onConfirm = (req: Request, res: Response) => {
   if (transactionId && hasPendingTransaction(transactionId)) {
     resolvePendingTransaction(transactionId, { context, message, error });
     console.log(`[BAP Webhook] Resolved pending transaction: ${transactionId}`);
+  }
+
+  // Create settlement record for buyer-side tracking (async, don't block response)
+  if (transactionId && !error && message?.order) {
+    (async () => {
+      try {
+        const order = message.order;
+        const orderItems = order?.['beckn:orderItems'] || [];
+
+        // Calculate total quantity
+        const totalQuantity = orderItems.reduce((sum: number, item: any) => {
+          const qty = item['beckn:quantity']?.unitQuantity || 0;
+          return sum + qty;
+        }, 0);
+
+        const orderItemId = orderItems[0]?.['beckn:orderedItem'] ||
+                           orderItems[0]?.['beckn:id'] ||
+                           `item-${transactionId}`;
+
+        // Extract counterparty (seller) info
+        const sellerPlatformId = context?.bpp_id || null;
+        const sellerDiscomId = order?.['beckn:orderAttributes']?.utilityIdSeller || null;
+
+        await settlementStore.createSettlement(
+          transactionId,
+          orderItemId,
+          totalQuantity,
+          'BUYER',
+          sellerPlatformId,
+          sellerDiscomId
+        );
+        console.log(`[BAP Webhook] Settlement record created: txn=${transactionId}, role=BUYER, qty=${totalQuantity}`);
+      } catch (err: any) {
+        console.error(`[BAP Webhook] Failed to create settlement record: ${err.message}`);
+      }
+    })();
   }
 
   return res.status(200).json({message: {ack: {status: "ACK"}}});

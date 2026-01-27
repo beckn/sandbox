@@ -32,11 +32,14 @@ export async function connectDB(): Promise<Db> {
   );
 
   // Settlements collection for ledger tracking
+  // Unique on transactionId + role (same txn can have BUYER and SELLER records)
   await db.collection('settlements').createIndex(
-    { transactionId: 1 },
+    { transactionId: 1, role: 1 },
     { unique: true }
   );
+  await db.collection('settlements').createIndex({ transactionId: 1 });
   await db.collection('settlements').createIndex({ settlementStatus: 1 });
+  await db.collection('settlements').createIndex({ role: 1 });
   await db.collection('settlements').createIndex({ createdAt: 1 });
   await db.collection('settlements').createIndex(
     { settlementStatus: 1, onSettleNotified: 1 }
