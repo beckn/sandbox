@@ -55,6 +55,11 @@ export interface SellerInfo {
   provider_id: string;
   meter_id: string;
   source_type: string;
+  total_quantity_kwh: number;
+  offering_period: {
+    start_date: string;
+    end_date: string;
+  };
 }
 
 // Preview response
@@ -85,7 +90,6 @@ export interface PlacedHourlyBid {
   offer_id: string;
   item_id: string;
   status: 'PUBLISHED' | 'FAILED';
-  published: boolean;
   error?: string;
 }
 

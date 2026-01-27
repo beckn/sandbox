@@ -41,7 +41,12 @@ export async function preview(request: SellerBidRequest): Promise<SellerPreviewR
       seller: {
         provider_id: request.provider_id,
         meter_id: request.meter_id,
-        source_type: request.source_type
+        source_type: request.source_type,
+        total_quantity_kwh: 0,
+        offering_period: {
+          start_date: targetDate,
+          end_date: targetDate
+        }
       },
       bids: [],
       skipped_hours: [],
@@ -67,7 +72,12 @@ export async function preview(request: SellerBidRequest): Promise<SellerPreviewR
       seller: {
         provider_id: request.provider_id,
         meter_id: request.meter_id,
-        source_type: request.source_type
+        source_type: request.source_type,
+        total_quantity_kwh: 0,
+        offering_period: {
+          start_date: targetDate,
+          end_date: targetDate
+        }
       },
       bids: [],
       skipped_hours: skippedHours,
@@ -148,7 +158,12 @@ export async function preview(request: SellerBidRequest): Promise<SellerPreviewR
     seller: {
       provider_id: request.provider_id,
       meter_id: request.meter_id,
-      source_type: request.source_type
+      source_type: request.source_type,
+      total_quantity_kwh: Math.round(totalQuantity * 100) / 100,
+      offering_period: {
+        start_date: targetDate,
+        end_date: targetDate
+      }
     },
     bids: selectedBids,
     skipped_hours: skippedHours,
@@ -225,8 +240,7 @@ export async function confirm(request: SellerBidRequest): Promise<SellerConfirmR
           catalog_id: ids.catalog_id,
           offer_id: ids.offer_id,
           item_id: ids.item_id,
-          status: 'PUBLISHED',
-          published: true
+          status: 'PUBLISHED'
         });
       } else {
         throw new Error(`Unexpected response status: ${response.status}`);
@@ -244,7 +258,6 @@ export async function confirm(request: SellerBidRequest): Promise<SellerConfirmR
         offer_id: '',
         item_id: '',
         status: 'FAILED',
-        published: false,
         error: errorMsg
       });
 
