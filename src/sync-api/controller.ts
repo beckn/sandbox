@@ -17,14 +17,9 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
       timeout: 10000
     });
 
-    // Check for ACK - handle both proper JSON and malformed responses
-    const data = ackResponse.data;
-    const isAck = (typeof data === 'object' && data?.message?.ack?.status === 'ACK') ||
-                  (typeof data === 'string' && data.includes('"status":"ACK"'));
-
-    if (!isAck) {
+    if (ackResponse.data?.message?.ack?.status !== 'ACK') {
       cancelPendingTransaction(transactionId);
-      throw new Error(`ONIX returned NACK: ${JSON.stringify(data)}`);
+      throw new Error(`ONIX returned NACK: ${JSON.stringify(ackResponse.data)}`);
     }
 
     console.log(`[SyncAPI] Received ACK, waiting for on_${action} callback...`);
