@@ -1,0 +1,100 @@
+// Seller Bidding Types - Hourly Optimization Module
+
+// Re-export shared types from bidding module
+export { MarketAnalysis, CompetitorOffer, ValidityWindow, FLOOR_PRICE, DEFAULT_UNDERCUT_PERCENT } from '../bidding/types';
+
+// Constants specific to hourly bidding
+export const HOURLY_MIN_THRESHOLD = 1.0;  // kWh - minimum biddable quantity per hour
+export const VALIDITY_BUFFER_HOURS = 4;   // Hours before delivery that offer becomes valid
+export const TOP_N_HOURS = 5;             // Number of top hours to select
+
+// Input types
+export interface SellerBidRequest {
+  provider_id: string;
+  meter_id: string;
+  source_type: 'SOLAR' | 'WIND' | 'BATTERY';
+}
+
+// Hourly forecast structures
+export interface HourlyExcess {
+  hour: string;      // "12:00"
+  excess_kwh: number;
+}
+
+export interface DailyForecast {
+  date: string;      // "2026-01-28"
+  hourly: HourlyExcess[];
+}
+
+// Processed hourly bid
+export interface HourlyBid {
+  hour: string;                    // "12:00"
+  quantity_kwh: number;
+  price_inr: number;
+  expected_revenue_inr: number;
+  delivery_window: {
+    start: string;  // ISO 8601
+    end: string;
+  };
+  validity_window: {
+    start: string;  // ISO 8601
+    end: string;
+  };
+  market_analysis: import('../bidding/types').MarketAnalysis;
+  reasoning: string;
+}
+
+// Skipped hour info
+export interface SkippedHour {
+  hour: string;
+  reason: string;
+}
+
+// Seller info for preview response
+export interface SellerInfo {
+  provider_id: string;
+  meter_id: string;
+  source_type: string;
+}
+
+// Preview response
+export interface SellerPreviewSummary {
+  total_hours_in_forecast: number;
+  valid_hours: number;
+  selected_hours: number;
+  skipped_hours: number;
+  total_quantity_kwh: number;
+  total_expected_revenue_inr: number;
+}
+
+export interface SellerPreviewResponse {
+  success: boolean;
+  target_date: string;
+  seller: SellerInfo;
+  bids: HourlyBid[];
+  skipped_hours: SkippedHour[];
+  summary: SellerPreviewSummary;
+}
+
+// Confirm response
+export interface PlacedHourlyBid {
+  hour: string;
+  quantity_kwh: number;
+  price_inr: number;
+  catalog_id: string;
+  offer_id: string;
+  item_id: string;
+  status: 'PUBLISHED' | 'FAILED';
+  published: boolean;
+  error?: string;
+}
+
+export interface SellerConfirmResponse {
+  success: boolean;
+  target_date: string;
+  placed_bids: PlacedHourlyBid[];
+  failed_at: {
+    hour: string;
+    error: string;
+  } | null;
+}

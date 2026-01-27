@@ -6,6 +6,7 @@ import { bapWebhookRoutes } from "./bap-webhook/routes";
 import { tradeRoutes } from "./trade/routes";
 import { syncApiRoutes } from "./sync-api/routes";
 import { biddingRoutes } from "./bidding/routes";
+import { sellerBiddingRoutes } from "./seller-bidding/routes";
 import { connectDB } from "./db";
 import { startPolling, stopPolling } from "./services/settlement-poller";
 
@@ -30,6 +31,7 @@ export async function createApp() {
   apiRouter.use("/", tradeRoutes());  // Mount at root: /api/publish, /api/inventory, etc.
   apiRouter.use("/", syncApiRoutes());  // Mounts /api/select, /api/init, etc.
   apiRouter.use("/", biddingRoutes());  // Mounts /api/bid/preview, /api/bid/confirm
+  apiRouter.use("/", sellerBiddingRoutes());  // Mounts /api/seller/preview, /api/seller/confirm
 
   // Mount the main API router with /api prefix
   apiRouter.use("/health", (req: Request, res: Response) => {
