@@ -211,11 +211,10 @@ export const onSelect = (req: Request, res: Response) => {
             "beckn:seller": provider,
             "beckn:buyer": buyer,
             "beckn:orderAttributes": {
-              "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeOrder/v0.2/context.jsonld",
-              "@type": "EnergyTradeOrderInterUtility",
               "bap_id": context.bap_id,
               "bpp_id": context.bpp_id,
               "total_quantity": totalQuantity
+              // Note: utilityIdBuyer and utilityIdSeller are added by buyer at init/confirm
             },
             "beckn:orderItems": orderItems
           }
