@@ -182,3 +182,76 @@ export async function getTestSettlement(transactionId: string, role?: string): P
   if (role) query.role = role;
   return testDb.collection('settlements').findOne(query);
 }
+
+/**
+ * Seed a user for auth tests
+ */
+export async function seedUser(user: {
+  phone: string;
+  pin: string;
+  name: string;
+}): Promise<void> {
+  if (!testDb) throw new Error('Test DB not initialized');
+
+  await testDb.collection('users').insertOne({
+    phone: user.phone,
+    pin: user.pin,
+    name: user.name,
+    vcVerified: false,
+    profiles: {
+      utilityCustomer: null,
+      consumptionProfile: null,
+      generationProfile: null,
+      storageProfile: null,
+      programEnrollment: null,
+    },
+    meters: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+}
+
+/**
+ * Seed a user with VC profiles for auth tests
+ */
+export async function seedUserWithProfiles(user: {
+  phone: string;
+  pin: string;
+  name: string;
+  vcVerified?: boolean;
+  profiles?: {
+    utilityCustomer?: any;
+    consumptionProfile?: any;
+    generationProfile?: any;
+    storageProfile?: any;
+    programEnrollment?: any;
+  };
+  meters?: string[];
+}): Promise<void> {
+  if (!testDb) throw new Error('Test DB not initialized');
+
+  await testDb.collection('users').insertOne({
+    phone: user.phone,
+    pin: user.pin,
+    name: user.name,
+    vcVerified: user.vcVerified ?? false,
+    profiles: {
+      utilityCustomer: user.profiles?.utilityCustomer ?? null,
+      consumptionProfile: user.profiles?.consumptionProfile ?? null,
+      generationProfile: user.profiles?.generationProfile ?? null,
+      storageProfile: user.profiles?.storageProfile ?? null,
+      programEnrollment: user.profiles?.programEnrollment ?? null,
+    },
+    meters: user.meters ?? [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+}
+
+/**
+ * Get a user from test DB
+ */
+export async function getTestUser(phone: string): Promise<any> {
+  if (!testDb) throw new Error('Test DB not initialized');
+  return testDb.collection('users').findOne({ phone });
+}

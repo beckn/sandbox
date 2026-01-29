@@ -7,6 +7,7 @@ import { tradeRoutes } from "./trade/routes";
 import { syncApiRoutes } from "./sync-api/routes";
 import { biddingRoutes } from "./bidding/routes";
 import { sellerBiddingRoutes } from "./seller-bidding/routes";
+import { authRoutes } from "./auth/routes";
 import { connectDB } from "./db";
 import { startPolling, stopPolling } from "./services/settlement-poller";
 
@@ -32,6 +33,7 @@ export async function createApp() {
   apiRouter.use("/", syncApiRoutes());  // Mounts /api/select, /api/init, etc.
   apiRouter.use("/", biddingRoutes());  // Mounts /api/bid/preview, /api/bid/confirm
   apiRouter.use("/", sellerBiddingRoutes());  // Mounts /api/seller/preview, /api/seller/confirm
+  apiRouter.use("/", authRoutes());  // Mounts /api/auth/login, /api/auth/verify-vc, /api/auth/me
 
   // Mount the main API router with /api prefix
   apiRouter.use("/health", (req: Request, res: Response) => {

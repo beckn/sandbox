@@ -51,6 +51,10 @@ export async function connectDB(): Promise<Db> {
     { unique: true }
   );
 
+  // Users collection for authentication
+  await db.collection('users').createIndex({ phone: 1 }, { unique: true });
+  await db.collection('users').createIndex({ meters: 1 });
+
   return db;
 }
 
