@@ -96,6 +96,8 @@ export const onSelect = (req: Request, res: Response) => {
 
       // Extract buyer from request (required in response)
       const buyer = message?.order?.['beckn:buyer'];
+      // Extract orderAttributes from request (contains utilityIds for inter-discom trading)
+      const requestOrderAttributes = message?.order?.['beckn:orderAttributes'];
 
       console.log(`[Select] Processing ${selectedItems.length} items`);
 
@@ -210,7 +212,8 @@ export const onSelect = (req: Request, res: Response) => {
             "beckn:orderStatus": "CREATED",
             "beckn:seller": provider,
             "beckn:buyer": buyer,
-            // Note: beckn:orderAttributes added at init/confirm when utilityIds are available
+            // Echo back orderAttributes if present in request (contains utilityIds for inter-discom)
+            ...(requestOrderAttributes && { "beckn:orderAttributes": requestOrderAttributes }),
             "beckn:orderItems": orderItems
           }
         }
