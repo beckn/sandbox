@@ -46,6 +46,7 @@ const selectSchema = z.object({
     version: z.string().min(1, 'version is required'),
     action: z.literal('select'),
     transaction_id: z.string().optional(),  // We generate if missing
+    message_id: z.string().optional(),      // We generate if missing
     bap_id: z.string().min(1, 'bap_id is required'),
     bap_uri: z.string().url('bap_uri must be a valid URL'),
     bpp_id: z.string().min(1, 'bpp_id is required'),
@@ -181,10 +182,11 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
 export async function syncSelect(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
+    const messageId = req.body.context?.message_id || uuidv4();
 
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId }
+      context: { ...req.body.context, transaction_id: transactionId, message_id: messageId }
     };
 
     const response = await executeAndWait('select', becknRequest, transactionId);
@@ -240,10 +242,11 @@ export async function syncSelect(req: Request, res: Response) {
 export async function syncInit(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
+    const messageId = req.body.context?.message_id || uuidv4();
 
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId }
+      context: { ...req.body.context, transaction_id: transactionId, message_id: messageId }
     };
 
     const response = await executeAndWait('init', becknRequest, transactionId);
@@ -267,6 +270,7 @@ export async function syncInit(req: Request, res: Response) {
 export async function syncConfirm(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
+    const messageId = req.body.context?.message_id || uuidv4();
 
     // Validate required inter-utility fields for confirm
     const orderAttributes = req.body.message?.order?.['beckn:orderAttributes'];
@@ -298,7 +302,7 @@ export async function syncConfirm(req: Request, res: Response) {
     // Ensure @type is EnergyTradeOrderInterUtility for inter-discom
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId },
+      context: { ...req.body.context, transaction_id: transactionId, message_id: messageId },
       message: {
         ...req.body.message,
         order: {
@@ -342,10 +346,11 @@ export async function syncConfirm(req: Request, res: Response) {
 export async function syncStatus(req: Request, res: Response) {
   try {
     const transactionId = req.body.context?.transaction_id || uuidv4();
+    const messageId = req.body.context?.message_id || uuidv4();
 
     const becknRequest = {
       ...req.body,
-      context: { ...req.body.context, transaction_id: transactionId }
+      context: { ...req.body.context, transaction_id: transactionId, message_id: messageId }
     };
 
     const response = await executeAndWait('status', becknRequest, transactionId);
