@@ -157,13 +157,19 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
       const onixError = error.response.data;
       console.error(`[SyncAPI] ONIX error response:`, JSON.stringify(onixError, null, 2));
       // ONIX error format: {message: {ack: {status: "NACK"}, error: {code, paths, message}}}
-      const errorMessage = onixError.message?.error?.message
-        || onixError.error?.message
+      const becknError = onixError.message?.error || onixError.error;
+      const errorMessage = becknError?.message
         || (typeof onixError.error === 'string' ? onixError.error : null)
         || `ONIX returned ${error.response.status}`;
+
+      // Normalize to validation error format: [{field, message}]
+      const errorDetails = becknError?.paths
+        ? [{ field: becknError.paths, message: becknError.message || errorMessage }]
+        : [{ field: '', message: errorMessage }];
+
       const err = new Error(errorMessage);
       (err as any).code = 'UPSTREAM_ERROR';
-      (err as any).onixError = onixError;
+      (err as any).errorDetails = errorDetails;
       (err as any).statusCode = 502;  // Bad Gateway for upstream errors
       throw err;
     }
@@ -225,7 +231,7 @@ export async function syncSelect(req: Request, res: Response) {
       error: {
         code: errorCode,
         message: error.message,
-        details: error.onixError || null
+        details: error.errorDetails || null
       }
     });
   }
