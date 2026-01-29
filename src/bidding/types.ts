@@ -35,7 +35,7 @@ export interface CompetitorOffer {
   quantity_kwh: number;
   source_type: string;
   date: string;
-  validity_window: ValidityWindow;
+  validity_window?: ValidityWindow;  // Optional for offers without specific window
 }
 
 export interface MarketAnalysis {

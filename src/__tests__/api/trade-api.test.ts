@@ -1,0 +1,213 @@
+/**
+ * Integration tests for Trade API endpoints
+ *
+ * Tests /api/publish, /api/inventory, /api/settlements
+ */
+
+import { Express } from 'express';
+import request from 'supertest';
+import express from 'express';
+import { setupTestDB, teardownTestDB, clearTestDB, seedItem, seedOffer, seedCatalog, seedSettlement } from '../../test-utils/db';
+import { createBecknCatalog, createBecknItem, createBecknOffer, createBecknContext } from '../../test-utils';
+
+// Mock external dependencies
+jest.mock('axios');
+
+// Mock DB connection
+jest.mock('../../db', () => {
+  const { getTestDB } = require('../../test-utils/db');
+  return {
+    getDB: () => getTestDB(),
+    connectDB: jest.fn().mockResolvedValue(undefined)
+  };
+});
+
+// Mock settlement poller
+jest.mock('../../services/settlement-poller', () => ({
+  startPolling: jest.fn(),
+  stopPolling: jest.fn(),
+  getPollingStatus: jest.fn().mockReturnValue({ running: false, lastPoll: null }),
+  pollOnce: jest.fn(),
+  refreshSettlement: jest.fn()
+}));
+
+// Mock ledger client
+jest.mock('../../services/ledger-client', () => ({
+  ledgerClient: {
+    LEDGER_URL: 'http://test-ledger',
+    getLedgerHealth: jest.fn().mockResolvedValue({ status: 'OK' }),
+    fetchTradeRecords: jest.fn().mockResolvedValue([])
+  }
+}));
+
+// Import app after mocking
+import { createApp } from '../../app';
+
+describe('Trade API Integration Tests', () => {
+  let app: Express;
+
+  beforeAll(async () => {
+    await setupTestDB();
+    app = await createApp();
+  });
+
+  afterAll(async () => {
+    await teardownTestDB();
+  });
+
+  beforeEach(async () => {
+    await clearTestDB();
+  });
+
+  describe('POST /api/publish', () => {
+    it('should store catalog and return success', async () => {
+      const item = createBecknItem('item-publish-001', 'test-provider', '100200300', 10);
+      const offer = createBecknOffer('offer-publish-001', 'item-publish-001', 'test-provider', 7.5, 10);
+      const catalog = createBecknCatalog('catalog-publish-001', [item], [offer]);
+
+      const publishRequest = {
+        context: createBecknContext('catalog_publish'),
+        message: { catalogs: [catalog] }
+      };
+
+      const response = await request(app)
+        .post('/api/publish')
+        .send(publishRequest)
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+    });
+
+    it('should return error for invalid catalog structure', async () => {
+      const response = await request(app)
+        .post('/api/publish')
+        .send({ context: {}, message: {} })
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should store items and offers separately', async () => {
+      const item = createBecknItem('item-sep-001', 'test-provider', '100200300', 15);
+      const offer = createBecknOffer('offer-sep-001', 'item-sep-001', 'test-provider', 8.0, 15);
+      const catalog = createBecknCatalog('catalog-sep-001', [item], [offer]);
+
+      await request(app)
+        .post('/api/publish')
+        .send({
+          context: createBecknContext('catalog_publish'),
+          message: { catalogs: [catalog] }
+        })
+        .expect(200);
+
+      // Verify via inventory endpoint
+      const inventoryResponse = await request(app)
+        .get('/api/inventory')
+        .expect(200);
+
+      expect(inventoryResponse.body.items.some((i: any) => i['beckn:id'] === 'item-sep-001')).toBe(true);
+    });
+  });
+
+  describe('GET /api/items', () => {
+    beforeEach(async () => {
+      await seedItem('item-list-001', 10);
+      await seedItem('item-list-002', 20);
+    });
+
+    it('should return all items', async () => {
+      const response = await request(app)
+        .get('/api/items')
+        .expect(200);
+
+      expect(response.body.items.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should return items with beckn structure', async () => {
+      const response = await request(app)
+        .get('/api/items')
+        .expect(200);
+
+      const item = response.body.items.find((i: any) => i['beckn:id'] === 'item-list-001');
+      expect(item).toBeDefined();
+      expect(item['beckn:itemAttributes']).toBeDefined();
+    });
+  });
+
+  describe('GET /api/offers', () => {
+    beforeEach(async () => {
+      await seedOffer('offer-list-001', 'item-001', 7.5, 10);
+      await seedOffer('offer-list-002', 'item-002', 8.0, 15);
+    });
+
+    it('should return all offers', async () => {
+      const response = await request(app)
+        .get('/api/offers')
+        .expect(200);
+
+      expect(response.body.offers.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('GET /api/inventory', () => {
+    beforeEach(async () => {
+      await seedItem('item-inv-001', 10);
+      await seedItem('item-inv-002', 25);
+    });
+
+    it('should return items with quantity', async () => {
+      const response = await request(app)
+        .get('/api/inventory')
+        .expect(200);
+
+      expect(response.body.items).toBeDefined();
+      response.body.items.forEach((item: any) => {
+        expect(item['beckn:itemAttributes'].availableQuantity).toBeDefined();
+      });
+    });
+  });
+
+  describe('GET /api/settlements', () => {
+    beforeEach(async () => {
+      await seedSettlement('txn-settle-001', 'SELLER', 'PENDING', 10);
+      await seedSettlement('txn-settle-002', 'SELLER', 'SETTLED', 15);
+    });
+
+    it('should return all settlements', async () => {
+      const response = await request(app)
+        .get('/api/settlements')
+        .expect(200);
+
+      expect(response.body.settlements.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should filter by status', async () => {
+      const response = await request(app)
+        .get('/api/settlements?status=PENDING')
+        .expect(200);
+
+      response.body.settlements.forEach((s: any) => {
+        expect(s.settlementStatus).toBe('PENDING');
+      });
+    });
+  });
+
+  describe('GET /api/settlements/stats', () => {
+    beforeEach(async () => {
+      await seedSettlement('txn-stats-001', 'SELLER', 'PENDING');
+      await seedSettlement('txn-stats-002', 'SELLER', 'SETTLED');
+    });
+
+    it('should return settlement statistics', async () => {
+      const response = await request(app)
+        .get('/api/settlements/stats')
+        .expect(200);
+
+      expect(response.body).toHaveProperty('stats');
+      expect(response.body.stats).toHaveProperty('total');
+      expect(response.body.stats).toHaveProperty('pending');
+      expect(response.body.stats).toHaveProperty('settled');
+    });
+  });
+});

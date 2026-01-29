@@ -71,7 +71,7 @@ export function analyzeCompetitorsForHour(
     competitors_found: hourlyOffers.length,
     lowest_competitor_price: lowest.price_per_kwh,
     lowest_competitor_quantity_kwh: lowest.quantity_kwh,
-    lowest_competitor_validity_window: lowest.validity_window,
+    lowest_competitor_validity_window: lowest.validity_window ?? null,
     lowest_competitor_id: lowest.offer_id,
     cached
   };
