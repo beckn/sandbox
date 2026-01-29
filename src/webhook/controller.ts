@@ -210,12 +210,7 @@ export const onSelect = (req: Request, res: Response) => {
             "beckn:orderStatus": "CREATED",
             "beckn:seller": provider,
             "beckn:buyer": buyer,
-            "beckn:orderAttributes": {
-              "bap_id": context.bap_id,
-              "bpp_id": context.bpp_id,
-              "total_quantity": totalQuantity
-              // Note: utilityIdBuyer and utilityIdSeller are added by buyer at init/confirm
-            },
+            // Note: beckn:orderAttributes added at init/confirm when utilityIds are available
             "beckn:orderItems": orderItems
           }
         }
