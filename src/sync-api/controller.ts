@@ -79,7 +79,12 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
     if (error.response?.data) {
       const onixError = error.response.data;
       console.error(`[SyncAPI] ONIX error response:`, JSON.stringify(onixError, null, 2));
-      const err = new Error(onixError.error || onixError.message || `ONIX returned ${error.response.status}`);
+      // ONIX error format: {message: {ack: {status: "NACK"}, error: {code, paths, message}}}
+      const errorMessage = onixError.message?.error?.message
+        || onixError.error?.message
+        || (typeof onixError.error === 'string' ? onixError.error : null)
+        || `ONIX returned ${error.response.status}`;
+      const err = new Error(errorMessage);
       (err as any).onixError = onixError;
       (err as any).statusCode = error.response.status;
       throw err;
