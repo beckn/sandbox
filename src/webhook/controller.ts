@@ -99,12 +99,19 @@ export const onSelect = (req: Request, res: Response) => {
 
       console.log(`[Select] Processing ${selectedItems.length} items`);
 
+      let totalQuantity = 0;
+
       for (const selectedItem of selectedItems) {
         // Support both beckn:id and beckn:orderedItem for item ID
         const itemId = selectedItem['beckn:id'] || selectedItem['beckn:orderedItem'];
         const requestedQty = selectedItem['beckn:quantity']?.unitQuantity || 0;
         // Preserve orderItemAttributes from request (buyer's meter info)
         const orderItemAttributes = selectedItem['beckn:orderItemAttributes'];
+        // Get the accepted offer from the request
+        const acceptedOfferFromRequest = selectedItem['beckn:acceptedOffer'];
+        const offerId = acceptedOfferFromRequest?.['beckn:id'];
+
+        totalQuantity += requestedQty;
 
         // Fetch actual item from MongoDB
         const item = await catalogStore.getItem(itemId);
@@ -137,7 +144,7 @@ export const onSelect = (req: Request, res: Response) => {
                 "beckn:orderItems": selectedItems.map((si: any) => ({
                   "beckn:orderedItem": si['beckn:id'] || si['beckn:orderedItem'],
                   "beckn:quantity": si['beckn:quantity'] || { unitQuantity: 0, unitText: "kWh" },
-                  "beckn:availableOffers": [],
+                  "beckn:acceptedOffer": si['beckn:acceptedOffer'] || null,
                   "beckn:error": {
                     "code": "INSUFFICIENT_INVENTORY",
                     "message": `Available: ${availableQty} kWh`
@@ -153,23 +160,26 @@ export const onSelect = (req: Request, res: Response) => {
           return; // Stop processing
         }
 
-        // Fetch ALL offers for this item
-        const offers = await catalogStore.getOffersByItemId(itemId);
-        if (!offers || offers.length === 0) {
-          console.log(`[Select] No offers found for item: ${itemId}`);
-          continue;
+        // Get the accepted offer - either from DB (if offerId provided) or from request
+        let acceptedOffer = acceptedOfferFromRequest;
+
+        if (offerId) {
+          // Fetch offer from DB to get full details
+          const offerFromDb = await catalogStore.getOffer(offerId);
+          if (offerFromDb) {
+            // Clean offer (remove MongoDB fields)
+            const { _id, catalogId, updatedAt, ...cleanOffer } = offerFromDb;
+            acceptedOffer = cleanOffer;
+            console.log(`[Select] Found offer in DB: ${offerId}`);
+          } else {
+            console.log(`[Select] Offer not found in DB, using from request: ${offerId}`);
+          }
         }
 
-        // Get provider from first offer (or from item)
-        if (!provider) {
-          provider = offers[0]['beckn:provider'] || item['beckn:provider'];
+        // Get provider from offer or item
+        if (!provider && acceptedOffer) {
+          provider = acceptedOffer['beckn:provider'] || item['beckn:provider'];
         }
-
-        // Clean offers for response (remove MongoDB fields)
-        const cleanOffers = offers.map((offer: any) => {
-          const { _id, catalogId, updatedAt, ...cleanOffer } = offer;
-          return cleanOffer;
-        });
 
         orderItems.push({
           "beckn:orderedItem": itemId,
@@ -179,10 +189,11 @@ export const onSelect = (req: Request, res: Response) => {
           },
           // Echo back orderItemAttributes (buyer's meter info) if provided
           ...(orderItemAttributes && { "beckn:orderItemAttributes": orderItemAttributes }),
-          "beckn:availableOffers": cleanOffers
+          // Return the accepted offer (singular, not array)
+          "beckn:acceptedOffer": acceptedOffer
         });
 
-        console.log(`[Select] Item ${itemId}: ${cleanOffers.length} offer(s) available`);
+        console.log(`[Select] Item ${itemId}: accepted offer ${offerId || 'from request'}`);
       }
 
       const responsePayload = {
@@ -199,6 +210,13 @@ export const onSelect = (req: Request, res: Response) => {
             "beckn:orderStatus": "CREATED",
             "beckn:seller": provider,
             "beckn:buyer": buyer,
+            "beckn:orderAttributes": {
+              "@context": "https://raw.githubusercontent.com/beckn/protocol-specifications-new/refs/heads/p2p-trading/schema/EnergyTradeOrder/v0.2/context.jsonld",
+              "@type": "EnergyTradeOrderInterUtility",
+              "bap_id": context.bap_id,
+              "bpp_id": context.bpp_id,
+              "total_quantity": totalQuantity
+            },
             "beckn:orderItems": orderItems
           }
         }
