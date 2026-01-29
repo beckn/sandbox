@@ -1,9 +1,82 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { createPendingTransaction, getPendingCount, cancelPendingTransaction } from '../services/transaction-store';
 
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
+
+// --- Zod Schemas ---
+
+// Reusable measure schema
+const measureSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  unit: z.string().min(1, 'unit is required'),
+});
+
+// Order item schema with offer validation
+const orderItemSchema = z.object({
+  id: z.string().min(1, 'item id is required'),
+  quantity: z.object({
+    selected: z.object({
+      measure: measureSchema,
+    }),
+  }),
+  offer: z.object({
+    id: z.string().min(1, 'offer id is required'),
+    'beckn:offerAttributes': z.object({
+      '@type': z.string().min(1, '@type is required'),
+      pricingModel: z.string().min(1, 'pricingModel is required'),  // Structure only, not enum
+      pricePerUnit: z.object({
+        currency: z.string().min(1, 'currency is required'),
+        value: z.union([z.string(), z.number()]),
+      }),
+    }).passthrough(),
+  }).passthrough().optional(),
+}).passthrough();
+
+// Select request schema
+const selectSchema = z.object({
+  context: z.object({
+    version: z.string().min(1, 'version is required'),
+    action: z.literal('select'),
+    transaction_id: z.string().optional(),  // We generate if missing
+    bap_id: z.string().min(1, 'bap_id is required'),
+    bap_uri: z.string().url('bap_uri must be a valid URL'),
+    bpp_id: z.string().min(1, 'bpp_id is required'),
+    bpp_uri: z.string().url('bpp_uri must be a valid URL'),
+  }).passthrough(),
+  message: z.object({
+    order: z.object({
+      status: z.string().optional(),
+      order_items: z.array(orderItemSchema).min(1, 'At least one order_item is required'),
+    }).passthrough(),
+  }),
+});
+
+// --- Validation Middleware ---
+
+function validateBody(schema: z.ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Request validation failed',
+          details: result.error.issues.map((e: z.ZodIssue) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+      });
+    }
+    next();
+  };
+}
+
+export const validateSelect = validateBody(selectSchema);
 
 /**
  * Check if ONIX response indicates ACK.
@@ -85,8 +158,9 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
         || (typeof onixError.error === 'string' ? onixError.error : null)
         || `ONIX returned ${error.response.status}`;
       const err = new Error(errorMessage);
+      (err as any).code = 'UPSTREAM_ERROR';
       (err as any).onixError = onixError;
-      (err as any).statusCode = error.response.status;
+      (err as any).statusCode = 502;  // Bad Gateway for upstream errors
       throw err;
     }
 
@@ -105,16 +179,21 @@ export async function syncSelect(req: Request, res: Response) {
 
     const response = await executeAndWait('select', becknRequest, transactionId);
 
-    // Check for error in response (e.g., insufficient inventory)
+    // Check for business error in response (e.g., insufficient inventory)
     if (response.error) {
       console.log(`[SyncAPI] syncSelect business error:`, response.error);
       return res.status(400).json({
         success: false,
         transaction_id: transactionId,
-        error: response.error
+        error: {
+          code: 'BUSINESS_ERROR',
+          message: response.error.message || 'Business rule validation failed',
+          details: response.error
+        }
       });
     }
 
+    // Success response
     return res.status(200).json({
       success: true,
       transaction_id: transactionId,
@@ -122,11 +201,28 @@ export async function syncSelect(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error(`[SyncAPI] syncSelect error:`, error.message);
-    const statusCode = error.statusCode || (error.message?.includes('Timeout') ? 504 : 500);
+
+    // Determine HTTP status and error code
+    let statusCode = 500;
+    let errorCode = 'INTERNAL_ERROR';
+
+    if (error.code === 'UPSTREAM_ERROR') {
+      statusCode = 502;
+      errorCode = 'UPSTREAM_ERROR';
+    } else if (error.message?.includes('Timeout')) {
+      statusCode = 504;
+      errorCode = 'TIMEOUT';
+    } else if (error.statusCode) {
+      statusCode = error.statusCode;
+    }
+
     return res.status(statusCode).json({
       success: false,
-      error: error.message,
-      details: error.onixError || null
+      error: {
+        code: errorCode,
+        message: error.message,
+        details: error.onixError || null
+      }
     });
   }
 }
