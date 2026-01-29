@@ -71,9 +71,20 @@ async function executeAndWait(action: string, becknRequest: any, transactionId: 
 
     console.log(`[SyncAPI] Received ACK, waiting for on_${action} callback...`);
     return await callbackPromise;
-  } catch (error) {
+  } catch (error: any) {
     // Cancel pending transaction to prevent orphaned timeout from crashing the process
     cancelPendingTransaction(transactionId);
+
+    // Extract ONIX error details from axios error response
+    if (error.response?.data) {
+      const onixError = error.response.data;
+      console.error(`[SyncAPI] ONIX error response:`, JSON.stringify(onixError, null, 2));
+      const err = new Error(onixError.error || onixError.message || `ONIX returned ${error.response.status}`);
+      (err as any).onixError = onixError;
+      (err as any).statusCode = error.response.status;
+      throw err;
+    }
+
     throw error;
   }
 }
@@ -106,9 +117,11 @@ export async function syncSelect(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error(`[SyncAPI] syncSelect error:`, error.message);
-    return res.status(error.message?.includes('Timeout') ? 504 : 500).json({
+    const statusCode = error.statusCode || (error.message?.includes('Timeout') ? 504 : 500);
+    return res.status(statusCode).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.onixError || null
     });
   }
 }
@@ -131,9 +144,11 @@ export async function syncInit(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error(`[SyncAPI] syncInit error:`, error.message);
-    return res.status(error.message?.includes('Timeout') ? 504 : 500).json({
+    const statusCode = error.statusCode || (error.message?.includes('Timeout') ? 504 : 500);
+    return res.status(statusCode).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.onixError || null
     });
   }
 }
@@ -204,9 +219,11 @@ export async function syncConfirm(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error(`[SyncAPI] syncConfirm error:`, error.message);
-    return res.status(error.message?.includes('Timeout') ? 504 : 500).json({
+    const statusCode = error.statusCode || (error.message?.includes('Timeout') ? 504 : 500);
+    return res.status(statusCode).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.onixError || null
     });
   }
 }
@@ -229,9 +246,11 @@ export async function syncStatus(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error(`[SyncAPI] syncStatus error:`, error.message);
-    return res.status(error.message?.includes('Timeout') ? 504 : 500).json({
+    const statusCode = error.statusCode || (error.message?.includes('Timeout') ? 504 : 500);
+    return res.status(statusCode).json({
       success: false,
-      error: error.message
+      error: error.message,
+      details: error.onixError || null
     });
   }
 }
