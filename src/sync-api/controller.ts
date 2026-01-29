@@ -8,31 +8,36 @@ const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
 
 // --- Zod Schemas ---
 
-// Reusable measure schema
-const measureSchema = z.object({
-  value: z.union([z.string(), z.number()]),
-  unit: z.string().min(1, 'unit is required'),
-});
+// beckn:quantity schema
+const becknQuantitySchema = z.object({
+  unitQuantity: z.union([z.string(), z.number()]),
+  unitText: z.string().min(1, 'unitText is required'),
+}).passthrough();
 
-// Order item schema with offer validation
-const orderItemSchema = z.object({
-  id: z.string().min(1, 'item id is required'),
-  quantity: z.object({
-    selected: z.object({
-      measure: measureSchema,
-    }),
-  }),
-  offer: z.object({
-    id: z.string().min(1, 'offer id is required'),
-    'beckn:offerAttributes': z.object({
-      '@type': z.string().min(1, '@type is required'),
-      pricingModel: z.string().min(1, 'pricingModel is required'),  // Structure only, not enum
-      pricePerUnit: z.object({
-        currency: z.string().min(1, 'currency is required'),
-        value: z.union([z.string(), z.number()]),
-      }),
-    }).passthrough(),
-  }).passthrough().optional(),
+// beckn:price schema
+const becknPriceSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  currency: z.string().min(1, 'currency is required'),
+}).passthrough();
+
+// beckn:offerAttributes schema
+const becknOfferAttributesSchema = z.object({
+  '@type': z.string().min(1, '@type is required'),
+  pricingModel: z.string().min(1, 'pricingModel is required'),
+  'beckn:price': becknPriceSchema.optional(),
+}).passthrough();
+
+// beckn:acceptedOffer schema
+const becknAcceptedOfferSchema = z.object({
+  'beckn:id': z.string().min(1, 'beckn:id is required'),
+  'beckn:offerAttributes': becknOfferAttributesSchema,
+}).passthrough();
+
+// beckn:orderItems array item schema
+const becknOrderItemSchema = z.object({
+  'beckn:orderedItem': z.string().min(1, 'beckn:orderedItem is required'),
+  'beckn:acceptedOffer': becknAcceptedOfferSchema,
+  'beckn:quantity': becknQuantitySchema,
 }).passthrough();
 
 // Select request schema
@@ -48,8 +53,7 @@ const selectSchema = z.object({
   }).passthrough(),
   message: z.object({
     order: z.object({
-      status: z.string().optional(),
-      order_items: z.array(orderItemSchema).min(1, 'At least one order_item is required'),
+      'beckn:orderItems': z.array(becknOrderItemSchema).min(1, 'At least one beckn:orderItems is required'),
     }).passthrough(),
   }),
 });
