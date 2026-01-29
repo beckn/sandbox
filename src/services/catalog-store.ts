@@ -82,6 +82,10 @@ export const catalogStore = {
     }).toArray();
   },
 
+  async getOffer(offerId: string) {
+    return getDB().collection('offers').findOne({ 'beckn:id': offerId });
+  },
+
   async getCatalog(catalogId: string) {
     return getDB().collection('catalogs').findOne({ 'beckn:id': catalogId });
   },
