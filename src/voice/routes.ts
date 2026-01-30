@@ -40,6 +40,12 @@ export function voiceRoutes(): Router {
       const result = await classifyIntent(text);
       const latencyMs = Date.now() - startTime;
 
+      // Convert entities array to object keyed by name
+      const entities: Record<string, { value: string; type: string }> = {};
+      for (const e of result.entities) {
+        entities[e.name] = { value: e.value, type: e.type };
+      }
+
       // Logging (privacy: no input text logged)
       console.log('[voice/intent]', {
         timestamp: new Date().toISOString(),
@@ -47,7 +53,7 @@ export function voiceRoutes(): Router {
         intent: result.intent,
         confidence: result.confidence,
         language: result.detected_language,
-        entity_count: Object.keys(result.entities).length,
+        entity_count: result.entities.length,
         latency_ms: latencyMs
       });
 
@@ -58,7 +64,7 @@ export function voiceRoutes(): Router {
           confidence: result.confidence,
           low_confidence: result.confidence < 0.5,
           detected_language: result.detected_language,
-          entities: result.entities
+          entities
         }
       });
     } catch (error: any) {

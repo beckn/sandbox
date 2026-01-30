@@ -8,8 +8,9 @@ const classificationSchema = z.object({
   intent: z.string(),
   confidence: z.number().min(0).max(1),
   detected_language: z.enum(['en', 'hi', 'hinglish']),
-  entities: z.record(z.string(), z.object({
-    value: z.union([z.string(), z.number(), z.object({ start: z.string(), end: z.string() })]),
+  entities: z.array(z.object({
+    name: z.string(),
+    value: z.string(),
     type: z.string()
   }))
 });
