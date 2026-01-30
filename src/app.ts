@@ -8,6 +8,7 @@ import { syncApiRoutes } from "./sync-api/routes";
 import { biddingRoutes } from "./bidding/routes";
 import { sellerBiddingRoutes } from "./seller-bidding/routes";
 import { authRoutes } from "./auth/routes";
+import { paymentRoutes } from "./payment/routes";
 import { connectDB } from "./db";
 import { startPolling, stopPolling } from "./services/settlement-poller";
 
@@ -34,6 +35,7 @@ export async function createApp() {
   apiRouter.use("/", biddingRoutes());  // Mounts /api/bid/preview, /api/bid/confirm
   apiRouter.use("/", sellerBiddingRoutes());  // Mounts /api/seller/preview, /api/seller/confirm
   apiRouter.use("/", authRoutes());  // Mounts /api/auth/login, /api/auth/verify-vc, /api/auth/me
+  apiRouter.use("/", paymentRoutes()); // Mounts /api/payment/order, /api/payment/verify, /api/payment/:orderId, /webhook/razorpay
 
   // Mount the main API router with /api prefix
   apiRouter.use("/health", (req: Request, res: Response) => {
