@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 import { getDB } from "../db";
 import { razorpay, rzp_key_secret } from "./razorpay";
-import crypto from "crypto";
 import { ObjectId } from "mongodb";
+import { validatePaymentVerification } from "razorpay/dist/utils/razorpay-utils";
 
 export enum PaymentStatus {
   CREATED = "created",
@@ -95,40 +95,43 @@ export const paymentService = {
     razorpayPaymentLinkId: string,
     razorpayPaymentLinkStatus: string,
   ): Promise<boolean> {
-    
     const secret = rzp_key_secret;
     if (!secret) throw new Error("RAZORPAY_KEY_SECRET not configured");
 
-    const generatedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(razorpayPaymentLinkId + "|" + razorpayPaymentId)
-      .digest("hex");
-
-    const status = Object.values(PaymentStatus).includes(
-      razorpayPaymentLinkStatus as PaymentStatus,
-    )
-      ? (razorpayPaymentLinkStatus as PaymentStatus)
-      : PaymentStatus.FAILED;
-
-    const db = getDB();
-    await db.collection<PaymentData>("payments").updateOne(
-      { orderId: razorpayOrderId },
+    const isValid = validatePaymentVerification(
       {
-        $set: {
-          status: status,
-          paymentId: razorpayPaymentId,
-          razorpaySignature,
-          updatedAt: new Date(),
-        },
+        payment_link_id: razorpayPaymentLinkId,
+        payment_id: razorpayPaymentId,
+        payment_link_reference_id: razorpayOrderId,
+        payment_link_status: razorpayPaymentLinkStatus,
       },
+      razorpaySignature,
+      secret,
     );
-    if (
-      generatedSignature === razorpaySignature &&
-      razorpayPaymentLinkStatus === "paid"
-    ) {
+
+    console.log("isValidating payment signature:", isValid);
+
+    if (isValid) {
+      const status = Object.values(PaymentStatus).includes(
+        razorpayPaymentLinkStatus as PaymentStatus,
+      )
+        ? (razorpayPaymentLinkStatus as PaymentStatus)
+        : PaymentStatus.FAILED;
+
+      const db = getDB();
+      await db.collection<PaymentData>("payments").updateOne(
+        { orderId: razorpayOrderId },
+        {
+          $set: {
+            status: status,
+            paymentId: razorpayPaymentId,
+            razorpaySignature,
+            updatedAt: new Date(),
+          },
+        },
+      );
       return true;
     } else {
-      // Log failure?
       console.warn(
         `[PaymentService] Signature verification failed for order ${razorpayOrderId}`,
       );
