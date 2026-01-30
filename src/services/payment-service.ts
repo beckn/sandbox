@@ -56,28 +56,28 @@ export const paymentService = {
     }
   },
 
-  async createPaymentLink(order:any) {
+  async createPaymentLink(order: any) {
     console.log("Creating payment link for order>>>:", order);
     try {
       let linkResp = await razorpay.paymentLink.create({
-      amount: order.amount,
-      currency: order.currency,
-      accept_partial: false,
-      reference_id: order.id, // Store Order ID as reference
-      description: "Payment for Order " + order.id,
-      customer: {
-        name: order.name,
-        // email: order.email,
-        contact: order.contact,
-      },
-      notify: { sms: true, email: true },
-      callback_url: "https://p2p.terrarexenergy.com/api/payment-callback", // Important for WebView
-      callback_method: "get" 
-    });
-    console.log("Payment link response:", linkResp);
-    return linkResp;
+        amount: order.amount,
+        currency: order.currency,
+        accept_partial: false,
+        reference_id: order.id, // Store Order ID as reference
+        description: "Payment for Order " + order.id,
+        customer: {
+          name: order.name,
+          // email: order.email,
+          contact: order.contact,
+        },
+        notify: { sms: true, email: true },
+        callback_url: "https://p2p.terrarexenergy.com/api/payment-callback", // Important for WebView
+        callback_method: "get",
+      });
+      console.log("Payment link response:", linkResp);
+      return linkResp;
     } catch (error) {
-        console.log("Error creating payment link:", error);
+      console.log("Error creating payment link:", error);
       if (error instanceof AxiosError) {
         return error.response?.data;
       }
@@ -92,29 +92,40 @@ export const paymentService = {
     razorpayOrderId: string,
     razorpayPaymentId: string,
     razorpaySignature: string,
+    razorpayPaymentLinkId: string,
+    razorpayPaymentLinkStatus: string,
   ): Promise<boolean> {
+    
     const secret = rzp_key_secret;
     if (!secret) throw new Error("RAZORPAY_KEY_SECRET not configured");
 
     const generatedSignature = crypto
       .createHmac("sha256", secret)
-      .update(razorpayOrderId + "|" + razorpayPaymentId)
+      .update(razorpayPaymentLinkId + "|" + razorpayPaymentId)
       .digest("hex");
 
-    if (generatedSignature === razorpaySignature) {
-      // Update DB status to PAID (or at least verified)
-      const db = getDB();
-      await db.collection<PaymentData>("payments").updateOne(
-        { orderId: razorpayOrderId },
-        {
-          $set: {
-            status: PaymentStatus.PAID,
-            paymentId: razorpayPaymentId,
-            razorpaySignature,
-            updatedAt: new Date(),
-          },
+    const status = Object.values(PaymentStatus).includes(
+      razorpayPaymentLinkStatus as PaymentStatus,
+    )
+      ? (razorpayPaymentLinkStatus as PaymentStatus)
+      : PaymentStatus.FAILED;
+
+    const db = getDB();
+    await db.collection<PaymentData>("payments").updateOne(
+      { orderId: razorpayOrderId },
+      {
+        $set: {
+          status: status,
+          paymentId: razorpayPaymentId,
+          razorpaySignature,
+          updatedAt: new Date(),
         },
-      );
+      },
+    );
+    if (
+      generatedSignature === razorpaySignature &&
+      razorpayPaymentLinkStatus === "paid"
+    ) {
       return true;
     } else {
       // Log failure?
@@ -132,5 +143,4 @@ export const paymentService = {
     const db = getDB();
     return await db.collection<PaymentData>("payments").findOne({ orderId });
   },
-
 };

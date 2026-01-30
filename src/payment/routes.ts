@@ -122,19 +122,22 @@ export const paymentRoutes = () => {
       !razorpay_payment_id ||
       !razorpay_payment_link_id ||
       !razorpay_payment_link_reference_id ||
-      !razorpay_signature
+      !razorpay_signature ||
+      !razorpay_payment_link_status
     ) {
-      return res.status(400).send("<h1>Invalid Payment Callback</h1>");
+      return res.status(400).json({ error: "Invalid Payment Callback" });
     }
 
     const isValid = await paymentService.verifyPayment(
       razorpay_payment_link_reference_id as string,
       razorpay_payment_id as string,
       razorpay_signature as string,
+      razorpay_payment_link_id as string,
+      razorpay_payment_link_status as string
     );
 
     if (isValid) {
-      res.json({ success: true, message: "Payment Successful" });
+      res.status(200).json({ success: true, message: "Payment Successful" });
     } else {
       res.status(400).json({ success: false, error: "Verification Failed" });
     }
