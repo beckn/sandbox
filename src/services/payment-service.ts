@@ -36,8 +36,7 @@ export const paymentService = {
     amount: number,
     currency: string = "INR",
     receipt?: string,
-    notes?: any,
-    userPhone?: string,
+    notes?: any
   ): Promise<any> {
     try {
       const options = {
@@ -67,10 +66,9 @@ export const paymentService = {
         description: "Payment for Order " + order.id,
         customer: {
           name: order.name,
-          // email: order.email,
           contact: order.contact,
         },
-        notify: { sms: true, email: true },
+        notify: { sms: true },
         callback_url: "https://p2p.terrarexenergy.com/api/payment-callback", // Important for WebView
         callback_method: "get",
       });
