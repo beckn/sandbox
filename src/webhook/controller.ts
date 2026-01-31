@@ -1,10 +1,11 @@
-import { Request, Response } from "express";
 import axios from "axios";
+import dotenv from "dotenv";
+import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { readDomainResponse } from "../utils";
 import { catalogStore } from "../services/catalog-store";
 import { settlementStore } from "../services/settlement-store";
-import { settlementPoller } from "../services/settlement-poller";
+import { readDomainResponse } from "../utils";
+dotenv.config();
 
 const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || '1.50'); // INR/kWh
 
