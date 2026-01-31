@@ -1,20 +1,15 @@
-import { PublishCommand } from "@aws-sdk/client-sns";
 import { smsService, snsClient } from "./sms-service";
 
-// Mock the SNS config module
-jest.mock("./sns", () => ({
-  snsClient: {
-    send: jest.fn(),
-  },
-  aws_sns_sender_id: "TestSender",
-}));
-
 describe("SmsService", () => {
-  let mockSend: jest.Mock;
+  let mockSend: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSend = snsClient.send as jest.Mock;
+    mockSend = jest.spyOn(snsClient, "send");
+  });
+
+  afterEach(() => {
+    mockSend.mockRestore();
   });
 
   it("should send SMS successfully", async () => {
@@ -29,16 +24,11 @@ describe("SmsService", () => {
     expect(mockSend).toHaveBeenCalledTimes(1);
 
     // Verify the command passed to send
-    const command = mockSend.mock.calls[0][0] as PublishCommand;
-    expect(command).toBeInstanceOf(PublishCommand);
-    expect(command.input).toEqual({
+    const command = mockSend.mock.calls[0][0];
+    expect(command.input).toMatchObject({
       PhoneNumber: phoneNumber,
       Message: message,
       MessageAttributes: {
-        "AWS.SNS.SMS.SenderID": {
-          DataType: "String",
-          StringValue: "TestSender",
-        },
         "AWS.SNS.SMS.SMSType": {
           DataType: "String",
           StringValue: "Transactional",

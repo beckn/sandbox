@@ -18,15 +18,28 @@ describe('EmailService', () => {
     process.env = originalEnv;
   });
 
-  it('should log to console when SMTP is not configured', async () => {
+  it('should use Ethereal when SMTP is not configured', async () => {
     delete process.env.SMTP_HOST;
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    
+    const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'test-id' });
+    mockedNodemailer.createTestAccount.mockResolvedValue({
+      user: 'testuser',
+      pass: 'testpass'
+    } as any);
+    mockedNodemailer.createTransport.mockReturnValue({
+      sendMail: sendMailMock
+    } as any);
+    mockedNodemailer.getTestMessageUrl.mockReturnValue('http://preview.url');
 
     const result = await emailService.sendEmail('test@example.com', 'Test Subject', 'Test Body');
 
     expect(result).toBe(true);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[EmailService] SMTP not configured'));
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Test Subject'));
+    expect(mockedNodemailer.createTestAccount).toHaveBeenCalled();
+    expect(mockedNodemailer.createTransport).toHaveBeenCalledWith(expect.objectContaining({
+      host: 'smtp.ethereal.email'
+    }));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('http://preview.url'));
     
     consoleSpy.mockRestore();
   });
@@ -48,7 +61,7 @@ describe('EmailService', () => {
     expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
       to: 'test@example.com',
       subject: 'Subject',
-      text: 'Body'
+      html: 'Body'
     }));
   });
 
