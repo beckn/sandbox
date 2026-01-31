@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.23",
+    "@aws-sdk/client-sns": "^3.980.0",
     "ai": "^6.0.62",
     "axios": "^1.13.1",
     "cors": "^2.8.5",
