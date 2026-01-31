@@ -88,7 +88,15 @@ export const paymentRoutes = () => {
     validateBody(paymentOrderSchema),
     async (req: Request, res: Response) => {
       try {
-        const { amount, currency, notes, userPhone, meterId, sourceMeterId, messageId } = req.body;
+        const {
+          amount,
+          currency,
+          notes,
+          userPhone,
+          meterId,
+          sourceMeterId,
+          messageId,
+        } = req.body;
         let { transactionId } = req.body;
         console.log("req.body", req.body);
 
@@ -207,7 +215,11 @@ export const paymentRoutes = () => {
         success: true,
         data: {
           message: "Payment Successful",
-          details: {},
+          details: {
+            rzpPaymentId: razorpay_payment_id,
+            rzpPaymentLinkId: razorpay_payment_link_id,
+            rzpOrderId: razorpay_payment_link_reference_id,
+          },
         },
       });
     } else {
