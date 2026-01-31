@@ -9,9 +9,11 @@ import { biddingRoutes } from "./bidding/routes";
 import { sellerBiddingRoutes } from "./seller-bidding/routes";
 import { authRoutes, authMiddleware } from "./auth/routes";
 import { paymentRoutes } from "./payment/routes";
+import { notificationRoutes } from "./notification/routes";
 import { voiceRoutes } from "./voice/routes";
 import { connectDB } from "./db";
 import { startPolling, stopPolling } from "./services/settlement-poller";
+import { ZodError } from "zod";
 
 export async function createApp() {
   // Connect to MongoDB on startup
@@ -37,6 +39,7 @@ export async function createApp() {
   apiRouter.use("/", sellerBiddingRoutes());  // Mounts /api/seller/preview, /api/seller/confirm
   apiRouter.use("/", authRoutes());  // Mounts /api/auth/login, /api/auth/verify-vc, /api/auth/me
   apiRouter.use("/", paymentRoutes()); // Mounts /api/payment/order, /api/payment/verify, /api/payment/:orderId, /webhook/razorpay
+  apiRouter.use("/", notificationRoutes()); // Mounts /api/notification/sms
   apiRouter.use("/voice", authMiddleware, voiceRoutes());  // Mounts /api/voice/intent
 
   // Mount the main API router with /api prefix
@@ -47,6 +50,19 @@ export async function createApp() {
 
   // Global error fallback
   app.use((err: any, req: any, res: any, _next: any) => {
+    if(err instanceof ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: err.issues[0]?.message || 'Request validation failed',
+          details: err.issues.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        }
+      });
+    }
     req?.log?.error?.(err);
     res.status(err.status || 500).json({ error: "internal_error" });
   });
