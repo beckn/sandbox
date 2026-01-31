@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import { paymentService } from "../services/payment-service";
 import crypto from "crypto";
 import { getDB } from "../db";
@@ -46,67 +47,109 @@ export enum PaymentStatus {
 export const paymentRoutes = () => {
   const router = Router();
 
-  // POST /api/payment/order - Create a new payment order
-  router.post("/payment/order", async (req: Request, res: Response) => {
-    try {
-      const {
-        amount,
-        currency,
-        receipt,
-        notes,
-        userPhone,
-        transactionId,
-        email,
-      } = req.body;
-      console.log("req.body", req.body);
-      if (!amount) {
-        return res.status(400).json({ error: "Amount is required" });
-      }
-
-      // If user is authenticated via middleware (available in req.user), use that phone
-      const phone = (req as any).user?.phone || userPhone;
-
-      const order = await paymentService.createOrder(
-        amount,
-        currency,
-        receipt,
-        notes,
-        phone,
-      );
-      console.log("Created Razorpay order:", order);
-      const db = getDB();
-
-      const txnBody = {
-        userPhone: phone,
-        status: "pending",
-        amount,
-        currency,
-        orderId: order.id,
-        transaction_id: transactionId || uuidv4(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      let trnsResp = await db
-        .collection<PaymentData>("payments")
-        .insertOne(txnBody);
-      console.log("Created payment db transaction:", trnsResp);
-
-      const paymentLink = await paymentService.createPaymentLink({
-        amount: order.amount,
-        currency,
-        id: order.id,
-        contact: phone,
-        email: notes?.email || "ritik@tequity.tech",
-        name: notes?.name || "Customer",
-      });
-      console.log("Created Razorpay payment link:", paymentLink);
-      res.json({ url: paymentLink.short_url, orderId: order.id });
-    } catch (error: any) {
-      console.error("[API] Error creating payment order:", error);
-      return res.status(500).json({ error: "Failed to create payment order" });
-    }
+  // --- Zod Schemas ---
+  const paymentOrderSchema = z.object({
+    amount: z.number().min(1, "Amount must be greater than 0"),
+    currency: z.string().min(1, "Currency is required"),
+    receipt: z.string().optional(),
+    notes: z.record(z.string(), z.any()).optional(),
+    userPhone: z.string().optional(),
+    transactionId: z.string().optional(),
+    meterId: z.string().min(1, "meterId is required"),
   });
+
+  // --- Middleware ---
+  function validateBody(schema: z.ZodSchema) {
+    return (req: Request, res: Response, next: NextFunction) => {
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Request validation failed",
+            details: result.error.issues.map((e: z.ZodIssue) => ({
+              field: e.path.join("."),
+              message: e.message,
+            })),
+          },
+        });
+      }
+      next();
+    };
+  }
+
+  // POST /api/payment/order - Create a new payment order
+  router.post(
+    "/payment/order",
+    authMiddleware,
+    validateBody(paymentOrderSchema),
+    async (req: Request, res: Response) => {
+      try {
+        const { amount, currency, notes, userPhone, meterId } = req.body;
+        let { transactionId } = req.body;
+        
+        console.log("req.body", req.body);
+
+        transactionId = transactionId || uuidv4();
+        // If user is authenticated via middleware (available in req.user), use that phone
+        const phone = (req as any).user?.phone || userPhone;
+
+        const order = await paymentService.createOrder(
+          amount,
+          currency,
+          transactionId,
+          notes,
+        );
+        console.log("Created Razorpay order:", order);
+        const db = getDB();
+
+        const txnBody = {
+          userPhone: phone,
+          status: "pending",
+          amount,
+          currency,
+          orderId: order.id,
+          transaction_id: transactionId,
+          meterId: meterId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        let trnsResp = await db
+          .collection<PaymentData>("payments")
+          .insertOne(txnBody);
+        console.log("Created payment db transaction:", trnsResp);
+
+        const paymentLink = await paymentService.createPaymentLink({
+          amount: order.amount,
+          currency,
+          id: order.id,
+          contact: phone,
+          name: notes?.name || "Customer",
+        });
+        console.log("Created Razorpay payment link:", paymentLink);
+
+        res.json({
+          success: true,
+          data: {
+            url: paymentLink.short_url,
+            orderId: order.id,
+          },
+        });
+      } catch (error: any) {
+        console.error("[API] Error creating payment order:", error);
+        return res.status(500).json({
+          success: false,
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create payment order",
+            details: error.message,
+          },
+        });
+      }
+    },
+  );
 
   router.get("/payment-callback", async (req, res) => {
     const {
@@ -125,7 +168,13 @@ export const paymentRoutes = () => {
       !razorpay_signature ||
       !razorpay_payment_link_status
     ) {
-      return res.status(400).json({ error: "Invalid Payment Callback" });
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_CALLBACK",
+          message: "Invalid Payment Callback parameters",
+        },
+      });
     }
 
     const isValid = await paymentService.verifyPayment(
@@ -133,13 +182,25 @@ export const paymentRoutes = () => {
       razorpay_payment_id as string,
       razorpay_signature as string,
       razorpay_payment_link_id as string,
-      razorpay_payment_link_status as string
+      razorpay_payment_link_status as string,
     );
 
     if (isValid) {
-      res.status(200).json({ success: true, message: "Payment Successful" });
+      res.status(200).json({
+        success: true,
+        data: {
+          message: "Payment Successful",
+          details: {},
+        },
+      });
     } else {
-      res.status(400).json({ success: false, error: "Verification Failed" });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "VERIFICATION_FAILED",
+          message: "Payment verification failed",
+        },
+      });
     }
   });
 
@@ -151,13 +212,26 @@ export const paymentRoutes = () => {
       const payment = await paymentService.getPayment(id);
 
       if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Payment not found",
+          },
+        });
       }
 
-      res.json(payment);
+      res.json({ success: true, data: payment });
     } catch (error: any) {
       console.error("[API] Error fetching payment:", error);
-      res.status(500).json({ error: "Failed to fetch payment details" });
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch payment details",
+          details: error.message,
+        },
+      });
     }
   });
 
