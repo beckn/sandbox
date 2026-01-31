@@ -87,9 +87,11 @@ export const paymentRoutes = () => {
     async (req: Request, res: Response) => {
       try {
         const { amount, currency, notes, userPhone, meterId } = req.body;
+        let { transactionId } = req.body;
+        
         console.log("req.body", req.body);
 
-        let transactionId = uuidv4();
+        transactionId = transactionId || uuidv4();
         // If user is authenticated via middleware (available in req.user), use that phone
         const phone = (req as any).user?.phone || userPhone;
 
