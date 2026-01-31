@@ -1,0 +1,70 @@
+import { emailService } from './email-service';
+import nodemailer from 'nodemailer';
+
+// Mock nodemailer
+jest.mock('nodemailer');
+const mockedNodemailer = nodemailer as jest.Mocked<typeof nodemailer>;
+
+describe('EmailService', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+    jest.clearAllMocks();
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it('should log to console when SMTP is not configured', async () => {
+    delete process.env.SMTP_HOST;
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+    const result = await emailService.sendEmail('test@example.com', 'Test Subject', 'Test Body');
+
+    expect(result).toBe(true);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[EmailService] SMTP not configured'));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Test Subject'));
+    
+    consoleSpy.mockRestore();
+  });
+
+  it('should use nodemailer when SMTP is configured', async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    process.env.SMTP_USER = 'user';
+    process.env.SMTP_PASS = 'pass';
+
+    const sendMailMock = jest.fn().mockResolvedValue({ messageId: 'test-id' });
+    mockedNodemailer.createTransport.mockReturnValue({
+      sendMail: sendMailMock
+    } as any);
+
+    const result = await emailService.sendEmail('test@example.com', 'Subject', 'Body');
+
+    expect(result).toBe(true);
+    expect(mockedNodemailer.createTransport).toHaveBeenCalled();
+    expect(sendMailMock).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'test@example.com',
+      subject: 'Subject',
+      text: 'Body'
+    }));
+  });
+
+  it('should return false on error', async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    mockedNodemailer.createTransport.mockReturnValue({
+      sendMail: jest.fn().mockRejectedValue(new Error('SMTP Error'))
+    } as any);
+
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    const result = await emailService.sendEmail('test@example.com', 'Subject', 'Body');
+
+    expect(result).toBe(false);
+    expect(consoleSpy).toHaveBeenCalled();
+    
+    consoleSpy.mockRestore();
+  });
+});
