@@ -25,6 +25,11 @@ export const INTENTS = [
     examples: ['help me', 'what can I do', 'kya kar sakta hoon']
   },
   {
+    name: 'auto_bid',
+    description: 'User wants to auto bid',
+    examples: ['auto bid', 'auto bid for energy', 'start auto bidding', 'auto bid karna hai', 'auto bid lagao']
+  },
+  {
     name: 'off_topic',
     description: 'Input is unrelated to energy trading or app functionality',
     examples: []
