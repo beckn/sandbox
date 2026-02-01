@@ -1,14 +1,14 @@
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { getDB } from "../../db";
+import { DeliveryMode } from "../../types";
 import {
   CompetitorOffer,
+  DEFAULT_UNDERCUT_PERCENT,
+  FLOOR_PRICE,
   MarketAnalysis,
   MarketSnapshot,
-  FLOOR_PRICE,
-  DEFAULT_UNDERCUT_PERCENT,
 } from "../types";
-import { DeliveryMode } from "../../types";
 
 // Use ONIX BAP for discover (handles signing and routing to CDS)
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || "http://onix-bap:8081";
@@ -23,18 +23,22 @@ export function buildDiscoverRequest({
   sourceType,
   minQty,
   maxQty,
-  deliveryMode = DeliveryMode.GRID_INJECTION,
+  deliveryMode,
   startDate,
   endDate,
+  itemId,
+  isActive
 }: {
-  sourceType: string;
+  sourceType?: string;
   minQty?: number;
   maxQty?: number;
   deliveryMode?: DeliveryMode,
   startDate?: Date;
   endDate?: Date;
   sortBy?: string,
-  order?: string
+  order?: string,
+  itemId?: string,
+  isActive?: boolean
 }) {
   const conditions = [];
 
@@ -68,8 +72,15 @@ export function buildDiscoverRequest({
     conditions.push(`@.beckn:itemAttributes.productionWindow[0].schema:startTime <= '${endDate.toISOString()}'`);
   }
 
-  // 7. Active Status (Always required)
-  conditions.push(`@.beckn:isActive == true`);
+  // 7. Active Status
+  if(isActive !== undefined) {
+    conditions.push(`@.beckn:isActive == ${isActive}`);
+  }
+
+  // 8. Item Id
+  if(itemId) {
+    conditions.push(`@.beckn:id == "${itemId}"`)
+  }
 
   const expression = `$[?(${conditions.join(" && ")})]`;
 

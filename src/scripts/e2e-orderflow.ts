@@ -202,14 +202,14 @@ const findItemInCDS = async (itemId: string) => {
 };
 
 const selectItem = async (
-  transcriptionId: string,
+  transactionId: string,
   item: any,
   quantity: number,
 ) => {
   const response = await axios.post(
     "https://p2p.terrarexenergy.com/api/select",
     {
-      context: createContext("select", transcriptionId),
+      context: createContext("select", transactionId),
       message: {
         order: {
           "@context":

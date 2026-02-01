@@ -1,5 +1,4 @@
 import axios, { isAxiosError } from "axios";
-import { startOfDay } from "date-fns";
 import { Request, Response, Router } from "express";
 import z from "zod";
 import { buildDiscoverRequest } from "../bidding/services/market-analyzer";
@@ -9,21 +8,22 @@ import { SourceType } from "../types";
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || "http://onix-bap:8081";
 
 const discoverSchema = z.object({
-  sourceType: z.nativeEnum(SourceType).default(SourceType.SOLAR),
+  sourceType: z.enum(SourceType).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
   minQty: z.coerce.number().optional(),
   maxQty: z.coerce.number().optional(),
   sortBy: z.enum(["price", "energy"]).optional(),
-  order: z.enum(["asc", "desc"]).optional()
+  order: z.enum(["asc", "desc"]).optional(),
+  itemId: z.string().optional(),
+  isActive: z.enum(["true", "false"]).transform((val) => val === "true").optional(),
 });
 
 export const discoverRoutes = () => {
   const router = Router();
-  const date = startOfDay(new Date())
 
   router.get("/discover", async (req: Request, res: Response) => {
-    const discoverUrl = `${ONIX_BAP_URL}/bap/caller/discover`;
+    const discoverUrl = `https://p2p.terrarexenergy.com/bap/caller/discover`;
     const query = discoverSchema.parse(req.query);
 
     try {
