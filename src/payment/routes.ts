@@ -56,6 +56,8 @@ export const paymentRoutes = () => {
     userPhone: z.string().optional(),
     transactionId: z.string().optional(),
     meterId: z.string().min(1, "meterId is required"),
+    sourceMeterId: z.string().min(1, "sourceMeterId is required"),
+    messageId: z.string().min(1, "messageId is required"),
   });
 
   // --- Middleware ---
@@ -86,14 +88,35 @@ export const paymentRoutes = () => {
     validateBody(paymentOrderSchema),
     async (req: Request, res: Response) => {
       try {
-        const { amount, currency, notes, userPhone, meterId } = req.body;
+        const {
+          amount,
+          currency,
+          notes,
+          userPhone,
+          meterId,
+          sourceMeterId,
+          messageId,
+        } = req.body;
         let { transactionId } = req.body;
-        
         console.log("req.body", req.body);
+
+        const phone = (req as any).user?.phone || userPhone;
+
+        const db = getDB();
+        const user = await db.collection("users").findOne({ phone });
+
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            error: {
+              code: "INVALID_USER",
+              message: "User Not Found",
+            },
+          });
+        }
 
         transactionId = transactionId || uuidv4();
         // If user is authenticated via middleware (available in req.user), use that phone
-        const phone = (req as any).user?.phone || userPhone;
 
         const order = await paymentService.createOrder(
           amount,
@@ -102,16 +125,18 @@ export const paymentRoutes = () => {
           notes,
         );
         console.log("Created Razorpay order:", order);
-        const db = getDB();
 
         const txnBody = {
           userPhone: phone,
+          userId: user._id,
           status: "pending",
           amount,
           currency,
           orderId: order.id,
           transaction_id: transactionId,
           meterId: meterId,
+          sourceMeterId: sourceMeterId,
+          messageId: messageId,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -190,7 +215,11 @@ export const paymentRoutes = () => {
         success: true,
         data: {
           message: "Payment Successful",
-          details: {},
+          details: {
+            rzpPaymentId: razorpay_payment_id,
+            rzpPaymentLinkId: razorpay_payment_link_id,
+            rzpOrderId: razorpay_payment_link_reference_id,
+          },
         },
       });
     } else {
