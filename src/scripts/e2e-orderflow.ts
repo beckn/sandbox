@@ -1,9 +1,14 @@
 import axios, { isAxiosError } from "axios";
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv"
+dotenv.config();
 
 const MONGO_URI =
-  "mongodb+srv://goku147troll_db_user:SQOZ24hYmRqZpfGT@cluster0.wtex6pk.mongodb.net/?appName=Cluster0";
-const MONGO_DB = "p2p_trading";
+  process.env.MONGO_URI_UAT;
+if (!MONGO_URI) {
+  throw new Error("Provide Mongodb URI");
+}
+const MONGO_DB = process.env.MONDO_DB ?? "p2p_trading";
 
 const createContext = (
   action: string,
