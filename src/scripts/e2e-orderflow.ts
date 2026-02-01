@@ -257,7 +257,7 @@ const initItem = async (transactionId: string, selectResponse: any) => {
 };
 
 const confirmItem = async (transactionId: string, initResponse: any) => {
-  const response = await axios.post("https://p2p.terrarexenergy.com/api/init", {
+  const response = await axios.post("https://p2p.terrarexenergy.com/api/confirm", {
     context: createContext("confirm", transactionId),
     message: initResponse.message,
   });

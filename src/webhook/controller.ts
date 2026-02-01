@@ -2,15 +2,14 @@ import axios from "axios";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { catalogStore } from "../services/catalog-store";
-import { settlementStore } from "../services/settlement-store";
-import { readDomainResponse } from "../utils";
 import {
   BECKN_CONTEXT_ROOT,
   ENERGY_TRADE_DELIVERY_SCHEMA_CTX,
   ENERGY_TRADE_ORDER_SCHEMA_CTX,
 } from "../constants/schemas";
-import { ledgerClient } from "../services/ledger-client";
+import { catalogStore } from "../services/catalog-store";
+import { settlementStore } from "../services/settlement-store";
+import { readDomainResponse } from "../utils";
 dotenv.config();
 
 const WHEELING_RATE = parseFloat(process.env.WHEELING_RATE || "1.50"); // INR/kWh
@@ -530,42 +529,14 @@ export const onConfirm = (req: Request, res: Response) => {
           orderItem.quantity ||
           1;
 
-        const unit = orderItem["beckn:quantity"]?.unitText || "kWh";
-
         if (itemId && quantity > 0) {
           console.log(`[Confirm] Reducing inventory: ${itemId} by ${quantity}`);
-          const timeWindow =
-            orderItem["beckn:acceptedOffer"]?.["beckn:offerAttributes"]?.[
-              "beckn:timeWindow"
-            ];
-          const deliveryStartTime = timeWindow?.["schema:startTime"];
-          const deliveryEndTime = timeWindow?.["schema:endTime"];
 
           // Get item to find its catalog
           const item = await catalogStore.getItem(itemId);
           if (item) {
             await Promise.all([
-              catalogStore.reduceInventory(itemId, quantity),
-              ledgerClient.addTrade({
-                buyerId: order["beckn:buyer"]["beckn:id"],
-                sellerId: order["beckn:seller"],
-                tradeTime: new Date().toISOString(),
-                orderItemId: itemId,
-                tradeDetails: [
-                  {
-                    tradeQty: quantity,
-                    tradeType: "ENERGY",
-                    tradeUnit: unit,
-                  },
-                ],
-                transactionId: context.transaction_id,
-                discomIdBuyer: "BUYER-DISCOM",
-                discomIdSeller: "SELLER-DISCOM",
-                deliveryStartTime,
-                deliveryEndTime,
-                platformIdBuyer: context.bap_id,
-                platformIdSeller: context.bpp_id,
-              }),
+              catalogStore.reduceInventory(itemId, quantity)
             ]);
             affectedCatalogs.add(item.catalogId);
             console.log(`[Confirm] Inventory reduced for ${itemId}`);
