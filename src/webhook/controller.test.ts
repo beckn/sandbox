@@ -290,7 +290,7 @@ describe("Webhook Controller", () => {
   describe("Template Handlers - Callback Behavior", () => {
     const validContext = {
       bpp_uri: "http://bpp:8082/path",
-      domain: "beckn.one:deg:p2p-trading",
+      domain: "beckn.one:deg:p2p-trading-interdiscom",
       bap_id: "test-bap",
       bpp_id: "test-bpp",
       message_id: "original-message-id",
@@ -384,7 +384,7 @@ describe("Webhook Controller", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       const callPayload = mockedAxios.post.mock.calls[0][1] as any;
-      expect(callPayload.context.domain).toBe("beckn.one:deg:p2p-trading");
+      expect(callPayload.context.domain).toBe("beckn.one:deg:p2p-trading-interdiscom");
       expect(callPayload.context.bap_id).toBe("test-bap");
       expect(callPayload.context.bpp_id).toBe("test-bpp");
     });

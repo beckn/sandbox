@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ledgerClient } from './ledger-client';
 import { settlementStore, SettlementDocument } from './settlement-store';
 import { catalogStore } from './catalog-store';
+import { BECKN_DOMAIN } from '../constants';
 
 const ENABLE_POLLING = process.env.ENABLE_SETTLEMENT_POLLING !== 'false';
 const POLL_INTERVAL_MS = parseInt(process.env.SETTLEMENT_POLL_INTERVAL_MS || '300000', 10); // 5 minutes
@@ -41,7 +42,7 @@ export async function triggerOnSettle(settlement: SettlementDocument): Promise<v
         timestamp: new Date().toISOString(),
         message_id: uuidv4(),
         transaction_id: settlement.transactionId,
-        domain: savedOrder?.context?.domain || 'beckn.one:deg:p2p-trading:2.0.0'
+        domain: savedOrder?.context?.domain || BECKN_DOMAIN
       },
       message: {
         settlement: {

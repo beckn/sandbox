@@ -5,6 +5,7 @@
 import { Request, Response } from 'express';
 import { DailyForecast, HourlyExcess, ValidityWindow, CalculatedBid, CompetitorOffer, MarketAnalysis } from '../bidding/types';
 import { HourlyBid, SkippedHour } from '../seller-bidding/types';
+import { BECKN_DOMAIN } from '../constants';
 
 // ============================================
 // Express Request/Response Mocks
@@ -374,7 +375,7 @@ export function createBecknContext(action: string, transactionId?: string): any 
     bpp_id: 'p2p.terrarexenergy.com',
     bpp_uri: 'https://p2p.terrarexenergy.com/bpp/receiver',
     ttl: 'PT30S',
-    domain: 'beckn.one:deg:p2p-trading:2.0.0'
+    domain: BECKN_DOMAIN
   };
 }
 

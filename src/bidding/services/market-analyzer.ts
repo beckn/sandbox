@@ -2,6 +2,7 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { getDB } from '../../db';
 import { CompetitorOffer, MarketAnalysis, MarketSnapshot, FLOOR_PRICE, DEFAULT_UNDERCUT_PERCENT } from '../types';
+import { BECKN_DOMAIN } from '../../constants';
 
 // Use ONIX BAP for discover (handles signing and routing to CDS)
 const ONIX_BAP_URL = process.env.ONIX_BAP_URL || 'http://onix-bap:8081';
@@ -27,7 +28,7 @@ function buildDiscoverRequest(sourceType: string, startDate: string, endDate: st
       bpp_id: "p2p.terrarexenergy.com",
       bpp_uri: "https://p2p.terrarexenergy.com/bpp/receiver",
       ttl: "PT30S",
-      domain: "beckn.one:deg:p2p-trading:2.0.0",
+      domain: BECKN_DOMAIN,
       location: {
         city: { code: "BLR", name: "Bangalore" },
         country: { code: "IND", name: "India" }

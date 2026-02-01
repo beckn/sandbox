@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { HourlyBid, VALIDITY_BUFFER_HOURS } from '../types';
+import { BECKN_DOMAIN } from '../../constants';
 
 /**
  * Generate unique IDs for catalog elements (includes timestamp + hour for uniqueness)
@@ -263,7 +264,7 @@ export function buildHourlyPublishRequest(params: {
       bpp_id: "p2p.terrarexenergy.com",
       bpp_uri: "https://p2p.terrarexenergy.com/bpp/receiver",
       ttl: "PT30S",
-      domain: "beckn.one:deg:p2p-trading:2.0.0"
+      domain: BECKN_DOMAIN
     },
     message: {
       catalogs: [catalog]

@@ -5,6 +5,9 @@ const readline = require('readline');
 const { v4: uuidv4 } = require('uuid');
 const { execSync } = require('child_process');
 
+// Beckn domain constant
+const BECKN_DOMAIN = process.env.BECKN_DOMAIN || 'beckn.one:deg:p2p-trading-interdiscom:2.0.0';
+
 // Fixed BAP config
 const BAP = {
   id: "p2p.terrarexenergy.com",
@@ -85,7 +88,7 @@ async function main() {
       bpp_id: bppId,
       bpp_uri: bppUri,
       ttl: "PT30S",
-      domain: selectCtx.domain || "beckn.one:deg:p2p-trading:2.0.0"
+      domain: selectCtx.domain || BECKN_DOMAIN
     },
     message: {
       order: {
