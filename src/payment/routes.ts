@@ -106,7 +106,7 @@ export const paymentRoutes = () => {
         const user = await db.collection("users").findOne({ phone });
 
         if (!user) {
-          return res.status(401).json({
+          return res.status(404).json({
             success: false,
             error: {
               code: "INVALID_USER",
