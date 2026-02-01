@@ -148,17 +148,21 @@ export const catalogStore = {
     return db.collection('orders').findOne({ transactionId });
   },
 
-  async getSellerEarnings(sellerId: string): Promise<number> {
+  async getSellerEarnings(sellerId: string, from?: Date, to: Date = new Date()): Promise<number> {
     const db = getDB();
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
 
+    const confirmedAt: { $gte?: Date, $lte?: Date } = {};
+    if(from) confirmedAt['$gte'] = from;
+    if(to) confirmedAt['$lte'] = to;
+    
     const pipeline = [
       {
         $match: {
           'order.beckn:seller': sellerId,
-          'order.beckn:orderStatus': 'CONFIRMED',
-          confirmedAt: { $gte: startOfDay }
+          'order.beckn:orderStatus': {
+            $in: ['CONFIRMED', 'SCHEDULED']
+          },
+          confirmedAt,
         }
       },
       {
@@ -191,5 +195,84 @@ export const catalogStore = {
 
     const result = await db.collection('orders').aggregate(pipeline).toArray();
     return Number((result[0]?.totalEarnings || 0).toFixed(2));
+  },
+
+  async getSellerTotalSold(sellerId: string, from?: Date, to: Date = new Date()): Promise<number> {
+    const db = getDB();
+    
+    const confirmedAt: { $gte?: Date, $lte?: Date } = {};
+    if(from) confirmedAt['$gte'] = from;
+    if(to) confirmedAt['$lte'] = to;
+    
+
+    const pipeline = [
+      {
+        $match: {
+          'order.beckn:seller': sellerId,
+          'order.beckn:orderStatus': {
+            $in: ['CONFIRMED', 'SCHEDULED']
+          }, 
+          confirmedAt
+        }
+      },
+      {
+        $unwind: '$order.beckn:orderItems'
+      },
+      {
+        $group: {
+          _id: null,
+          totalQuantity: { 
+            $sum: { 
+              $ifNull: ['$order.beckn:orderItems.beckn:quantity.unitQuantity', 0] 
+            } 
+          }
+        }
+      }
+    ];
+
+    const result = await db.collection('orders').aggregate(pipeline).toArray();
+    return result[0]?.totalQuantity || 0;
+  },
+
+  async getSellerAvailableInventory(sellerId: string): Promise<number> {
+    const db = getDB();
+    const result = await db.collection('items').aggregate([
+      {
+        $match: {
+          'beckn:provider.beckn:id': sellerId
+        }
+      },
+      {
+         $group: {
+            _id: null,
+            totalAvailable: { $sum: '$beckn:itemAttributes.availableQuantity' }
+         }
+      }
+    ]).toArray();
+    
+    return result[0]?.totalAvailable || 0;
+  },
+
+  async getSocialImpactDonations(sellerId: string): Promise<number> {
+      const db = getDB();
+      const verifiedAccounts = await db.collection("users").find({
+        vcVerified: true,
+        socialImpactVerified: true
+      }).toArray();
+
+      const verifiedAccountIds = new Set(verifiedAccounts.map(p => p.profiles.consumptionProfile.id));
+      const pipeline = [
+        {
+          $match: {
+            'order.beckn:seller': sellerId,
+            'order.beckn:orderStatus': { $in: ['CONFIRMED', 'SCHEDULED', 'COMPLETED'] },
+            'order.beckn:buyer.beckn:id': { $in: Array.from(verifiedAccountIds) }
+          }
+        }
+      ];
+  
+      const result = await db.collection('orders').aggregate(pipeline).toArray();
+      const quantity = result.map(p => p.order["beckn:orderAttributes"]["total_quantity"]).reduce((a,b) => a + b,0);
+      return quantity;
   }
 };
