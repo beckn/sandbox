@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
-import { readDomainResponse, resolveDomain } from "../utils";
+import { readDomainResponse } from "../utils";
 
 const getCallbackUrl = (context: any, action: string): string => {
   const callbackBase = process.env.BPP_CALLBACK_ENDPOINT;
@@ -20,7 +20,7 @@ export const onSelect = (req: Request, res: Response) => {
   // on_select_response.context = { ...context, action: "on_select" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_select", getPersona());
+      const template = await readDomainResponse(context.domain, "on_select", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_select" },
@@ -49,7 +49,7 @@ export const onInit = (req: Request, res: Response) => {
   // on_init_response.context = { ...context, action: "on_init" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_init", getPersona());
+      const template = await readDomainResponse(context.domain, "on_init", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_init" },
@@ -78,7 +78,7 @@ export const onConfirm = (req: Request, res: Response) => {
   // on_confirm_response.context = { ...context, action: "on_confirm" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_confirm", getPersona());
+      const template = await readDomainResponse(context.domain, "on_confirm", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_confirm" },
@@ -107,7 +107,7 @@ export const onStatus = (req: Request, res: Response) => {
   // on_status_response.context = { ...context, action: "on_status" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_status", getPersona());
+      const template = await readDomainResponse(context.domain, "on_status", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_status" },
@@ -136,7 +136,7 @@ export const onUpdate = (req: Request, res: Response) => {
   // on_update_response.context = { ...context, action: "on_update" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_update", getPersona());
+      const template = await readDomainResponse(context.domain, "on_update", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_update" },
@@ -166,7 +166,7 @@ export const onRating = (req: Request, res: Response) => {
   // on_rating_response.context = { ...context, action: "on_rating" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_rating", getPersona());
+      const template = await readDomainResponse(context.domain, "on_rating", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_rating" },
@@ -195,7 +195,7 @@ export const onSupport = (req: Request, res: Response) => {
   // on_support_response.context = { ...context, action: "on_support" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_support", getPersona());
+      const template = await readDomainResponse(context.domain, "on_support", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_support" },
@@ -224,7 +224,7 @@ export const onTrack = (req: Request, res: Response) => {
   // on_track_response.context = { ...context, action: "on_track" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_track", getPersona());
+      const template = await readDomainResponse(context.domain, "on_track", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_track" },
@@ -253,7 +253,7 @@ export const onCancel = (req: Request, res: Response) => {
   // on_cancel_response.context = { ...context, action: "on_cancel" };
   (async () => {
     try {
-      const template = await readDomainResponse(resolveDomain(context), "on_cancel", getPersona());
+      const template = await readDomainResponse(context.domain, "on_cancel", getPersona());
       const responsePayload = {
         ...template,
         context: { ...context, action: "on_cancel" },
