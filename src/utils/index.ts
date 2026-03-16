@@ -10,14 +10,6 @@ export const normalizeDomain = (domain: string) => {
   return domain.replace(/:\d+(?:\.\d+)*$/, "");
 };
 
-/**
- * Resolves the domain identifier from a beckn context object.
- * Falls back to networkId if domain is absent.
- */
-export const resolveDomain = (context: any): string => {
-  return context.domain || context.network_id;
-};
-
 export const readDomainResponse = async (
   domain: string,
   action: string,
