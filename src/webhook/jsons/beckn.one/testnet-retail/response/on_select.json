@@ -24,9 +24,13 @@
             "name": "Venky.Mahadevan@Bazaar"
           },
           "participantAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/schemas/refs/heads/main/schema/Participant/v2.0/context.jsonld",
-            "@type": "Participant",
-            "telephone": "+91 9876543210"
+            "@context": "https://raw.githubusercontent.com/beckn/schemas/main/schema/Provider/v2.1/context.jsonld",
+            "@type": "Provider",
+            "id": "provider-venky-bazaar",
+            "descriptor": {
+              "name": "Venky.Mahadevan@Bazaar",
+              "shortDesc": "Multi-category retail store specializing in electronics and home goods"
+            }
           }
         },
         {
@@ -35,10 +39,15 @@
             "name": "Motiur Rehman"
           },
           "participantAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/schemas/refs/heads/main/schema/Participant/v2.0/context.jsonld",
-            "@type": "Participant",
-            "email": "nc.rehman@gmail.com",
-            "telephone": "+919191223433"
+            "@context": "https://raw.githubusercontent.com/beckn/schemas/main/schema/Consumer/v2.0/context.jsonld",
+            "@type": "Consumer",
+            "role": "buyer",
+            "person": {
+              "id": "abc",
+              "name": "Motiur Rehman",
+              "email": "nc.rehman@gmail.com",
+              "telephone": "+919191223433"
+            }
           }
         }
       ],
@@ -65,12 +74,12 @@
                 },
                 "physical": {
                   "weight": {
-                    "value": 350,
-                    "unit": "G"
+                    "unitQuantity": 350,
+                    "unitCode": "G"
                   },
                   "volume": {
-                    "value": 500,
-                    "unit": "ML"
+                    "unitQuantity": 500,
+                    "unitCode": "ML"
                   },
                   "appearance": {
                     "color": "Yellow",
@@ -86,8 +95,8 @@
                   },
                   "commonOrGenericName": "Stainless Steel Vacuum Flask",
                   "netQuantity": {
-                    "value": 500,
-                    "unit": "ML"
+                    "unitQuantity": 500,
+                    "unitCode": "ML"
                   }
                 }
               }
