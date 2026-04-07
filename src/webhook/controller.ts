@@ -7,7 +7,8 @@ const getCallbackUrl = (context: any, action: string): string => {
   if (callbackBase) {
     return `${callbackBase.replace(/\/$/, '')}/on_${action}`;
   }
-  const full_bpp_url = new URL(context.bpp_uri);
+  const bpp_url = context.bpp_uri || context.bpp_url || context.bppUri || context.bppUrl;
+  const full_bpp_url = new URL(bpp_url);
   return `${full_bpp_url.origin}/bpp/caller/on_${action}`;
 };
 

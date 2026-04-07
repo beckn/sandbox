@@ -15,7 +15,7 @@ export const normalizeDomain = (domain: string) => {
  * Falls back to networkId if domain is absent.
  */
 export const resolveDomain = (context: any): string => {
-  return context.domain || context.network_id;
+  return context.domain || context.network_id || context.networkId;
 };
 
 export const readDomainResponse = async (
