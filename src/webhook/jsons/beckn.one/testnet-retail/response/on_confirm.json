@@ -232,29 +232,9 @@
           }
         }
       ],
-      "settlements": [
-        {
-          "id": "settlement-001",
-          "considerationId": "consideration-001",
-          "status": "COMPLETE",
-          "settlementAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailSettlement/v2.1/context.jsonld",
-            "@type": "RetailSettlement",
-            "method": "ONLINE",
-            "settledAmount": 3000,
-            "currency": "INR",
-            "settledAt": "2023-11-06T10:00:00.000Z",
-            "gateway": {
-              "name": "Razorpay",
-              "transactionId": "raz816863816313"
-            },
-            "reconciliationId": "REC-VB-20231106-001"
-          }
-        }
-      ],
       "contractAttributes": {
         "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailContract/v2.1/context.jsonld",
-        "@type": "ContractAttributes",
+        "@type": "rcca:RetailContract",
         "buyerInstructions": "Please handle with care",
         "deliveryPreferences": {
           "leaveAtDoor": false,

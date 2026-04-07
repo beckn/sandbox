@@ -232,64 +232,9 @@
           }
         }
       ],
-      "settlements": [
-        {
-          "id": "settlement-upi",
-          "considerationId": "consideration-001",
-          "status": "DRAFT",
-          "settlementAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailSettlement/v2.1/context.jsonld",
-            "@type": "RetailSettlement",
-            "method": "ONLINE",
-            "settledAmount": 3000,
-            "currency": "INR",
-            "settledAt": "",
-            "gateway": {
-              "name": "",
-              "transactionId": "",
-              "url": "upi://pay?pa=venky.bazaar@upi&am=3000&cu=INR"
-            }
-          }
-        },
-        {
-          "id": "settlement-cod",
-          "considerationId": "consideration-001",
-          "status": "DRAFT",
-          "settlementAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailSettlement/v2.1/context.jsonld",
-            "@type": "RetailSettlement",
-            "method": "COD_COLLECTION",
-            "settledAmount": 3000,
-            "currency": "INR",
-            "settledAt": "",
-            "gateway": {
-              "name": "COD",
-              "transactionId": ""
-            }
-          }
-        },
-        {
-          "id": "settlement-card",
-          "considerationId": "consideration-001",
-          "status": "DRAFT",
-          "settlementAttributes": {
-            "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailSettlement/v2.1/context.jsonld",
-            "@type": "RetailSettlement",
-            "method": "ONLINE",
-            "settledAmount": 3000,
-            "currency": "INR",
-            "settledAt": "",
-            "gateway": {
-              "name": "",
-              "transactionId": "",
-              "url": "https://4e21-124-123-32-28.ngrok-free.app/payments/checkout?order_id=order-flask-20231106-001&amount=3000&currency=INR"
-            }
-          }
-        }
-      ],
       "contractAttributes": {
         "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailContract/v2.1/context.jsonld",
-        "@type": "ContractAttributes",
+        "@type": "rcca:RetailContract",
         "buyerInstructions": "Please handle with care",
         "deliveryPreferences": {
           "leaveAtDoor": false,
