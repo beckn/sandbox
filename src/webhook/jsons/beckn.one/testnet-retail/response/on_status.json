@@ -1,16 +1,16 @@
 {
   "context": {
     "version": "2.0.0",
-    "action": "on_update",
+    "action": "on_status",
     "timestamp": "2023-11-06T10:14:10.295Z",
-    "messageId": "090adec2-696d-47c9-8452-797a91e7bebc",
+    "messageId": "b8c1e69c-fbbc-439b-a5de-2adcc74fa0da",
     "transactionId": "8100d125-76a7-4588-88be-81b97657cd09",
     "bapId": "bap.example.com",
     "bapUri": "http://onix-bap:8081/bap/receiver",
     "bppId": "bpp.example.com",
     "bppUri": "http://onix-bpp:8082/bpp/receiver",
     "ttl": "PT10M",
-    "networkId": "beckn.one/testnet"
+    "networkId": "beckn.one/testnet-retail"
   },
   "message": {
     "contract": {
@@ -121,49 +121,8 @@
                   "allowed": true,
                   "window": "PT2H",
                   "cutoffEvent": "BEFORE_PACKING"
-                },
-                "replacement": {
-                  "allowed": true,
-                  "window": "P7D",
-                  "method": "SELLER_PICKUP",
-                  "subjectToAvailability": true
                 }
-              },
-              "paymentConstraints": {
-                "codAvailable": true
-              },
-              "serviceability": {
-                "distanceConstraint": {
-                  "maxDistance": 15,
-                  "unit": "KM"
-                },
-                "timing": [
-                  {
-                    "daysOfWeek": [
-                      "MON",
-                      "TUE",
-                      "WED",
-                      "THU",
-                      "FRI",
-                      "SAT",
-                      "SUN"
-                    ],
-                    "timeRange": {
-                      "start": "09:00",
-                      "end": "21:00"
-                    }
-                  }
-                ]
-              },
-              "timeRange": {
-                "start": "09:00",
-                "end": "21:00"
-              },
-              "holidays": [
-                "2026-01-26",
-                "2026-08-15",
-                "2026-12-25"
-              ]
+              }
             }
           },
           "commitmentAttributes": {
@@ -226,7 +185,7 @@
           ],
           "performanceAttributes": {
             "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailPerformance/v2.1/context.jsonld",
-            "@type": "PerformanceAttributes",
+            "@type": "rcpa:RetailPerformance",
             "supportedPerformanceModes": [
               "DELIVERY"
             ],
@@ -240,7 +199,7 @@
               },
               "contact": {
                 "name": "Motiur Rehman",
-                "phone": "+91-8056475647"
+                "phone": "+919246394908"
               }
             },
             "sla": {

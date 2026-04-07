@@ -1,21 +1,22 @@
 {
   "context": {
     "version": "2.0.0",
-    "action": "on_select",
-    "timestamp": "2023-11-06T09:44:47.229Z",
-    "messageId": "6d098f3a-4873-4b2e-935e-e4d6be92eb01",
+    "action": "on_update",
+    "timestamp": "2023-11-06T10:14:10.295Z",
+    "messageId": "090adec2-696d-47c9-8452-797a91e7bebc",
     "transactionId": "8100d125-76a7-4588-88be-81b97657cd09",
     "bapId": "bap.example.com",
     "bapUri": "http://onix-bap:8081/bap/receiver",
     "bppId": "bpp.example.com",
     "bppUri": "http://onix-bpp:8082/bpp/receiver",
     "ttl": "PT10M",
-    "networkId": "beckn.one/testnet"
+    "networkId": "beckn.one/testnet-retail"
   },
   "message": {
     "contract": {
+      "id": "b989c9a9-f603-4d44-b38d-26fd72286b38",
       "status": {
-        "code": "DRAFT"
+        "code": "ACTIVE"
       },
       "participants": [
         {
@@ -47,7 +48,7 @@
           "id": "commitment-flask-001",
           "status": {
             "descriptor": {
-              "code": "DRAFT"
+              "code": "ACTIVE"
             }
           },
           "resources": [
@@ -187,7 +188,7 @@
         {
           "id": "consideration-001",
           "status": {
-            "code": "QUOTED"
+            "code": "AGREED"
           },
           "considerationAttributes": {
             "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailConsideration/v2.1/context.jsonld",
@@ -218,14 +219,14 @@
         {
           "id": "f1",
           "status": {
-            "code": "PENDING"
+            "code": "PACKING"
           },
           "commitmentIds": [
             "commitment-flask-001"
           ],
           "performanceAttributes": {
             "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailPerformance/v2.1/context.jsonld",
-            "@type": "PerformanceAttributes",
+            "@type": "rcpa:RetailPerformance",
             "supportedPerformanceModes": [
               "DELIVERY"
             ],
@@ -239,12 +240,92 @@
               },
               "contact": {
                 "name": "Motiur Rehman",
-                "phone": "+919246394908"
+                "phone": "+91-8056475647"
               }
+            },
+            "sla": {
+              "min": "PT2H",
+              "max": "PT4H",
+              "unitBasis": "ORDER_CONFIRMATION"
+            },
+            "handling": [
+              "FRAGILE"
+            ],
+            "operatingHours": [
+              {
+                "daysOfWeek": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "timeRange": {
+                  "start": "09:00",
+                  "end": "21:00"
+                }
+              }
+            ],
+            "installationScheduling": {
+              "available": false
             }
           }
         }
-      ]
+      ],
+      "settlements": [
+        {
+          "id": "settlement-001",
+          "considerationId": "consideration-001",
+          "status": "COMPLETE",
+          "settlementAttributes": {
+            "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailSettlement/v2.1/context.jsonld",
+            "@type": "RetailSettlement",
+            "method": "ONLINE",
+            "settledAmount": 3000,
+            "currency": "INR",
+            "settledAt": "2023-11-06T10:00:00.000Z",
+            "gateway": {
+              "name": "Razorpay",
+              "transactionId": "raz816863816313"
+            },
+            "reconciliationId": "REC-VB-20231106-001"
+          }
+        }
+      ],
+      "contractAttributes": {
+        "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailContract/v2.1/context.jsonld",
+        "@type": "ContractAttributes",
+        "buyerInstructions": "Please handle with care",
+        "deliveryPreferences": {
+          "leaveAtDoor": false,
+          "contactless": true,
+          "preferredTimeSlot": {
+            "start": "2023-11-06T14:00:00Z",
+            "end": "2023-11-06T18:00:00Z"
+          }
+        },
+        "gift": {
+          "isGift": false
+        },
+        "invoicePreferences": {
+          "taxId": {
+            "scheme": "GSTIN",
+            "country": "IN",
+            "value": "29ABCDE1234F1Z5"
+          },
+          "companyName": "Rehman Enterprises",
+          "email": "nc.rehman@gmail.com"
+        },
+        "source": {
+          "channel": "mobile-app",
+          "campaignId": "DIWALI2023"
+        },
+        "loyalty": {
+          "programId": "VB-REWARDS-2023",
+          "pointsRedeemed": 0
+        }
+      }
     }
   }
 }

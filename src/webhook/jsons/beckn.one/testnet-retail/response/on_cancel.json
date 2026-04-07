@@ -1,22 +1,22 @@
 {
   "context": {
     "version": "2.0.0",
-    "action": "on_confirm",
+    "action": "on_cancel",
     "timestamp": "2023-11-06T10:14:10.295Z",
-    "messageId": "58d0a142-68e3-48d9-92e8-fbc791e44949",
+    "messageId": "c53b2e4b-ff6d-434b-ba2c-329a3260b3e9",
     "transactionId": "8100d125-76a7-4588-88be-81b97657cd09",
     "bapId": "bap.example.com",
     "bapUri": "http://onix-bap:8081/bap/receiver",
     "bppId": "bpp.example.com",
     "bppUri": "http://onix-bpp:8082/bpp/receiver",
     "ttl": "PT10M",
-    "networkId": "beckn.one/testnet"
+    "networkId": "beckn.one/testnet-retail"
   },
   "message": {
     "contract": {
       "id": "b989c9a9-f603-4d44-b38d-26fd72286b38",
       "status": {
-        "code": "ACTIVE"
+        "code": "CANCELLED"
       },
       "participants": [
         {
@@ -48,7 +48,7 @@
           "id": "commitment-flask-001",
           "status": {
             "descriptor": {
-              "code": "ACTIVE"
+              "code": "CLOSED"
             }
           },
           "resources": [
@@ -121,8 +121,49 @@
                   "allowed": true,
                   "window": "PT2H",
                   "cutoffEvent": "BEFORE_PACKING"
+                },
+                "replacement": {
+                  "allowed": true,
+                  "window": "P7D",
+                  "method": "SELLER_PICKUP",
+                  "subjectToAvailability": true
                 }
-              }
+              },
+              "paymentConstraints": {
+                "codAvailable": true
+              },
+              "serviceability": {
+                "distanceConstraint": {
+                  "maxDistance": 15,
+                  "unit": "KM"
+                },
+                "timing": [
+                  {
+                    "daysOfWeek": [
+                      "MON",
+                      "TUE",
+                      "WED",
+                      "THU",
+                      "FRI",
+                      "SAT",
+                      "SUN"
+                    ],
+                    "timeRange": {
+                      "start": "09:00",
+                      "end": "21:00"
+                    }
+                  }
+                ]
+              },
+              "timeRange": {
+                "start": "09:00",
+                "end": "21:00"
+              },
+              "holidays": [
+                "2026-01-26",
+                "2026-08-15",
+                "2026-12-25"
+              ]
             }
           },
           "commitmentAttributes": {
@@ -147,7 +188,7 @@
         {
           "id": "consideration-001",
           "status": {
-            "code": "AGREED"
+            "code": "REFUNDED"
           },
           "considerationAttributes": {
             "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailConsideration/v2.1/context.jsonld",
@@ -178,14 +219,14 @@
         {
           "id": "f1",
           "status": {
-            "code": "ORDER_PLACED"
+            "code": "CANCELLED"
           },
           "commitmentIds": [
             "commitment-flask-001"
           ],
           "performanceAttributes": {
             "@context": "https://raw.githubusercontent.com/beckn/local-retail/refs/heads/main/schema/RetailPerformance/v2.1/context.jsonld",
-            "@type": "PerformanceAttributes",
+            "@type": "rcpa:RetailPerformance",
             "supportedPerformanceModes": [
               "DELIVERY"
             ],
