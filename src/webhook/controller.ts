@@ -16,6 +16,24 @@ const getPersona = (): string | undefined => {
   return process.env.PERSONA;
 };
 
+const buildResponseContext = (
+  context: Record<string, unknown>,
+  action: string
+) => {
+  const result: Record<string, unknown> = {
+    ...context,
+    action: `on_${action}`,
+  };
+
+  const TIMESTAMP_KEYS = ["timestamp", "time_stamp"] as const;
+  const timestampKey = TIMESTAMP_KEYS.find((k) => k in context);
+  if (timestampKey) {
+    result[timestampKey] = new Date().toISOString();
+  }
+
+  return result;
+};
+
 export const onSelect = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
   // on_select_response.context = { ...context, action: "on_select" };
@@ -24,7 +42,7 @@ export const onSelect = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_select", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_select" },
+        context: buildResponseContext(context, "select"),
       };
       const callbackUrl = getCallbackUrl(context, "select");
       console.log(
@@ -53,7 +71,7 @@ export const onInit = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_init", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_init" },
+        context: buildResponseContext(context, "init"),
       };
       const callbackUrl = getCallbackUrl(context, "init");
       console.log(
@@ -82,7 +100,7 @@ export const onConfirm = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_confirm", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_confirm" },
+        context: buildResponseContext(context, "confirm"),
       };
       const callbackUrl = getCallbackUrl(context, "confirm");
       console.log(
@@ -111,7 +129,7 @@ export const onStatus = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_status", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_status" },
+        context: buildResponseContext(context, "status"),
       };
       const callbackUrl = getCallbackUrl(context, "status");
       console.log(
@@ -140,7 +158,7 @@ export const onUpdate = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_update", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_update" },
+        context: buildResponseContext(context, "update"),
       };
       const callbackUrl = getCallbackUrl(context, "update");
       console.log(
@@ -170,7 +188,7 @@ export const onRating = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_rating", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_rating" },
+        context: buildResponseContext(context, "rating"),
       };
       const callbackUrl = getCallbackUrl(context, "rating");
       console.log(
@@ -199,7 +217,7 @@ export const onSupport = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_support", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_support" },
+        context: buildResponseContext(context, "support"),
       };
       const callbackUrl = getCallbackUrl(context, "support");
       console.log(
@@ -228,7 +246,7 @@ export const onTrack = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_track", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_track" },
+        context: buildResponseContext(context, "track"),
       };
       const callbackUrl = getCallbackUrl(context, "track");
       console.log(
@@ -257,7 +275,7 @@ export const onCancel = (req: Request, res: Response) => {
       const template = await readDomainResponse(resolveDomain(context), "on_cancel", getPersona());
       const responsePayload = {
         ...template,
-        context: { ...context, action: "on_cancel" },
+        context: buildResponseContext(context, "cancel"),
       };
       const callbackUrl = getCallbackUrl(context, "cancel");
       console.log(
