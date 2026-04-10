@@ -1,15 +1,15 @@
 {
     "context": {
-        "networkId": "beckn:dataset:ddm:1.0.0",
-        "action": "on_select",
+        "networkId": "nfh.global/testnet-ddm",
+        "action": "on_confirm",
         "version": "2.0.0",
-        "bapId": "ev-charging.sandbox1.com",
-        "bapUri": "https://ev-charging.sandbox1.com",
-        "bppId": "ev-charging.sandbox2.com",
-        "bppUri": "https://ev-charging.sandbox2.com",
+        "bapId": "bap.example.com",
+        "bapUri": "https://bap.example.com",
+        "bppId": "bpp.example.com",
+        "bppUri": "https://bpp.example.com",
         "transactionId": "550e8400-e29b-41d4-a716-446655440100",
-        "messageId": "550e8400-e29b-41d4-a716-446655440104",
-        "timestamp": "2025-02-15T10:03:01Z",
+        "messageId": "550e8400-e29b-41d4-a716-446655440108",
+        "timestamp": "2025-02-15T10:05:08Z",
         "ttl": "PT30S"
     },
     "message": {
@@ -17,17 +17,17 @@
             "id": "550e8400-e29b-41d4-a716-446655440200",
             "descriptor": {
                 "name": "Dataset Download Request",
-                "shortDesc": "Request for rainwater probability dataset"
+                "shortDesc": "Payment completed for rainwater probability dataset"
             },
             "status": {
-                "code": "DRAFT"
+                "code": "ACTIVE"
             },
             "commitments": [
                 {
                     "id": "commitment-001",
                     "status": {
                         "descriptor": {
-                            "code": "DRAFT"
+                            "code": "ACTIVE"
                         }
                     },
                     "resources": [
@@ -106,15 +106,15 @@
                 {
                     "id": "climate-data-provider-001",
                     "descriptor": {
-                        "name": "Climate Data Provider",
-                        "shortDesc": "Provider of climate and meteorological data"
+                        "name": "Climate Data Provider"
                     },
                     "participantAttributes": {
-                        "@context": "https://schema.beckn.io/Provider/v2.1/context.jsonld",
-                        "@type": "Provider",
+                        "@context": "https://schema.beckn.io/Organization/v2.0/context.jsonld",
+                        "@type": "Organization",
                         "id": "climate-data-provider-001",
-                        "descriptor": {
-                            "name": "Climate Data Provider"
+                        "name": "Climate Data Provider",
+                        "organizationAttributes": {
+                            "role": "SELLER"
                         }
                     }
                 },
@@ -124,13 +124,60 @@
                         "name": "Hydrology Lab, Delhi"
                     },
                     "participantAttributes": {
-                        "@context": "https://schema.beckn.io/Consumer/v2.0/context.jsonld",
-                        "@type": "Consumer",
-                        "role": "buyer",
-                        "organization": {
-                            "id": "buyer-hydrology-lab-001",
-                            "name": "Hydrology Lab, Delhi"
+                        "@context": "https://schema.beckn.io/Organization/v2.0/context.jsonld",
+                        "@type": "Organization",
+                        "id": "buyer-hydrology-lab-001",
+                        "name": "Hydrology Lab, Delhi",
+                        "email": "data-team@hydrology.example.in",
+                        "telephone": "+91-11-4000-1234",
+                        "organizationAttributes": {
+                            "role": "BUYER",
+                            "taxID": "GSTIN-07AAAAH0001A1Z5"
                         }
+                    }
+                }
+            ],
+            "performance": [
+                {
+                    "id": "ffl-rain-2025-03-00017",
+                    "status": {
+                        "code": "COMPLETE"
+                    },
+                    "commitmentIds": [
+                        "commitment-001"
+                    ],
+                    "performanceAttributes": {
+                        "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetFulfillment/v1/context.jsonld",
+                        "@type": "DatasetFulfillment",
+                        "fulfillment:accessMethod": "DOWNLOAD",
+                        "fulfillment:accessUrl": "https://data.climate-data.example.com/secure/ds-rainprob-maharashtra-march-2025.parquet?token=eyJhbGciOiJIUzI1NiJ9.rain-order-2025-03-00017.SIGNATURE",
+                        "fulfillment:accessStart": "2025-02-15T10:05:08Z",
+                        "fulfillment:accessEnd": "2025-02-22T10:05:08Z",
+                        "fulfillment:format": "Parquet",
+                        "fulfillment:fileSizeBytes": 104857600,
+                        "fulfillment:maxDownloads": 5,
+                        "fulfillment:downloadsUsed": 0,
+                        "fulfillment:supportEmail": "datasupport@climate-data.example.com",
+                        "fulfillment:termsUrl": "https://climate-data.example.com/terms/dataset-license",
+                        "fulfillment:attributionText": "Data sourced from ClimateData India Pvt. Ltd. (2025). Rainwater Probability Maharashtra March 2025 [Dataset]. https://climate-data.example.com. CC BY 4.0."
+                    }
+                }
+            ],
+            "settlements": [
+                {
+                    "id": "settlement-payment-completed",
+                    "considerationId": "consideration-pricing",
+                    "status": "COMPLETE",
+                    "settlementAttributes": {
+                        "@context": "https://schema.beckn.io/Payment/v2.0/context.jsonld",
+                        "@type": "Payment",
+                        "beckn:paymentStatus": "COMPLETED",
+                        "beckn:amount": {
+                            "currency": "INR",
+                            "value": 4999.00
+                        },
+                        "beckn:txnRef": "UPI-TXN-2025-021510050122",
+                        "beckn:paidAt": "2025-02-15T10:03:01Z"
                     }
                 }
             ]

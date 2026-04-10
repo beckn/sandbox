@@ -1,15 +1,15 @@
 {
     "context": {
-        "networkId": "beckn:dataset:ddm:1.0.0",
-        "action": "on_confirm",
+        "networkId": "nfh.global/testnet-ddm",
+        "action": "on_select",
         "version": "2.0.0",
-        "bapId": "ev-charging.sandbox1.com",
-        "bapUri": "https://ev-charging.sandbox1.com",
-        "bppId": "ev-charging.sandbox2.com",
-        "bppUri": "https://ev-charging.sandbox2.com",
+        "bapId": "bap.example.com",
+        "bapUri": "https://bap.example.com",
+        "bppId": "bpp.example.com",
+        "bppUri": "https://bpp.example.com",
         "transactionId": "550e8400-e29b-41d4-a716-446655440100",
-        "messageId": "550e8400-e29b-41d4-a716-446655440108",
-        "timestamp": "2025-02-15T10:05:08Z",
+        "messageId": "550e8400-e29b-41d4-a716-446655440104",
+        "timestamp": "2025-02-15T10:03:01Z",
         "ttl": "PT30S"
     },
     "message": {
@@ -17,17 +17,17 @@
             "id": "550e8400-e29b-41d4-a716-446655440200",
             "descriptor": {
                 "name": "Dataset Download Request",
-                "shortDesc": "Payment completed for rainwater probability dataset"
+                "shortDesc": "Request for rainwater probability dataset"
             },
             "status": {
-                "code": "ACTIVE"
+                "code": "DRAFT"
             },
             "commitments": [
                 {
                     "id": "commitment-001",
                     "status": {
                         "descriptor": {
-                            "code": "ACTIVE"
+                            "code": "DRAFT"
                         }
                     },
                     "resources": [
@@ -106,15 +106,15 @@
                 {
                     "id": "climate-data-provider-001",
                     "descriptor": {
-                        "name": "Climate Data Provider"
+                        "name": "Climate Data Provider",
+                        "shortDesc": "Provider of climate and meteorological data"
                     },
                     "participantAttributes": {
-                        "@context": "https://schema.beckn.io/Organization/v2.0/context.jsonld",
-                        "@type": "Organization",
+                        "@context": "https://schema.beckn.io/Provider/v2.1/context.jsonld",
+                        "@type": "Provider",
                         "id": "climate-data-provider-001",
-                        "name": "Climate Data Provider",
-                        "organizationAttributes": {
-                            "role": "SELLER"
+                        "descriptor": {
+                            "name": "Climate Data Provider"
                         }
                     }
                 },
@@ -124,34 +124,13 @@
                         "name": "Hydrology Lab, Delhi"
                     },
                     "participantAttributes": {
-                        "@context": "https://schema.beckn.io/Organization/v2.0/context.jsonld",
-                        "@type": "Organization",
-                        "id": "buyer-hydrology-lab-001",
-                        "name": "Hydrology Lab, Delhi",
-                        "email": "data-team@hydrology.example.in",
-                        "telephone": "+91-11-4000-1234",
-                        "organizationAttributes": {
-                            "role": "BUYER",
-                            "taxID": "GSTIN-07AAAAH0001A1Z5"
+                        "@context": "https://schema.beckn.io/Consumer/v2.0/context.jsonld",
+                        "@type": "Consumer",
+                        "role": "buyer",
+                        "organization": {
+                            "id": "buyer-hydrology-lab-001",
+                            "name": "Hydrology Lab, Delhi"
                         }
-                    }
-                }
-            ],
-            "settlements": [
-                {
-                    "id": "settlement-payment-completed",
-                    "considerationId": "consideration-pricing",
-                    "status": "COMPLETE",
-                    "settlementAttributes": {
-                        "@context": "https://schema.beckn.io/Payment/v2.0/context.jsonld",
-                        "@type": "Payment",
-                        "beckn:paymentStatus": "COMPLETED",
-                        "beckn:amount": {
-                            "currency": "INR",
-                            "value": 4999.00
-                        },
-                        "beckn:txnRef": "UPI-TXN-2025-021510050122",
-                        "beckn:paidAt": "2025-02-15T10:03:01Z"
                     }
                 }
             ]
