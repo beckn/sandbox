@@ -7,7 +7,7 @@ export const normalizeDomain = (domain: string) => {
   if (!domain) {
     return domain;
   }
-  return domain.replace(/:\d+(?:\.\d+)*$/, "");
+  return domain.replace(/:\d+(?:\.\d+)*$/, "").replace(/:/g, "/");
 };
 
 /**
