@@ -209,6 +209,36 @@ export const onRating = (req: Request, res: Response) => {
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
+export const onRate = (req: Request, res: Response) => {
+  const { context, message }: { context: any; message: any } = req.body;
+
+  // on_rating_response.context = { ...context, action: "on_rating" };
+  (async () => {
+    try {
+      const template = await readDomainResponse(resolveDomain(context), "on_rate", getPersona());
+      const responsePayload = {
+        ...template,
+        context: buildResponseContext(context, "rate"),
+      };
+      const callbackUrl = getCallbackUrl(context, "rate");
+      console.log(
+        "Triggering On Rate response to:",
+        callbackUrl
+      );
+      const rating_data = await axios.post(
+        callbackUrl,
+        responsePayload
+      );
+      console.log("On Rate api call response: ", rating_data.data);
+    } catch (error: any) {
+      console.log(error);
+    } finally {
+      return;
+    }
+  })();
+  return res.status(200).json({message: {ack: {status: "ACK"}}});
+};
+
 export const onSupport = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
   // on_support_response.context = { ...context, action: "on_support" };

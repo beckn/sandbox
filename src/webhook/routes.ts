@@ -7,6 +7,7 @@ import {
   onCancel,
   onUpdate,
   onRating,
+  onRate,
   onSupport,
   onTrack,
   triggerOnStatus,
@@ -24,6 +25,7 @@ export const webhookRoutes = () => {
   router.post("/cancel", onCancel);
   router.post("/update", onUpdate);
   router.post("/rating", onRating);
+  router.post("/rate", onRate);
   router.post("/support", onSupport);
   router.post("/track", onTrack);
 
