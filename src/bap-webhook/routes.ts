@@ -7,6 +7,7 @@ import {
   onCancel,
   onUpdate,
   onRating,
+  onRate,
   onSupport,
   onTrack
 } from "./controller";
@@ -21,6 +22,7 @@ export const bapWebhookRoutes = () => {
   router.post("/on_cancel", onCancel);
   router.post("/on_update", onUpdate);
   router.post("/on_rating", onRating);
+  router.post("/on_rate", onRate);
   router.post("/on_support", onSupport);
   router.post("/on_track", onTrack);
 

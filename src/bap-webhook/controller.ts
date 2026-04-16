@@ -48,6 +48,14 @@ export const onRating = (req: Request, res: Response) => {
   return res.status(200).json({message: {ack: {status: "ACK"}}});
 };
 
+export const onRate = (req: Request, res: Response) => {
+  const { context, message }: { context: any; message: any } = req.body;
+  
+  console.log(JSON.stringify({message, context}, null, 2));
+
+  return res.status(200).json({message: {ack: {status: "ACK"}}});
+};
+
 export const onSupport = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
 
