@@ -23,7 +23,7 @@ export const readDomainResponse = async (
   action: string,
   persona?: string
 ) => {
-  const normalizedDomain = normalizeDomain(domain);
+  const normalizedDomain = normalizeDomain(domain).replace(/:/g, ".");
 
   // If persona is specified, try persona-specific path first
   if (persona) {
