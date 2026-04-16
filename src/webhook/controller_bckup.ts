@@ -1,14 +1,14 @@
 // import { Request, Response } from "express";
 // import axios from "axios";
-// import on_select_response from "./jsons/beckn.one:energy:ev-charging/response/on_select.json";
-// import on_init_response from "./jsons/beckn.one:energy:ev-charging/response/on_init.json";
-// import on_confirm_response from "./jsons/beckn.one:energy:ev-charging/response/on_confirm.json";
-// import on_status_response from "./jsons/beckn.one:energy:ev-charging/response/on_status.json";
-// import on_track_response from "./jsons/beckn.one:energy:ev-charging/response/on_track.json";
-// import on_cancel_response from "./jsons/beckn.one:energy:ev-charging/response/on_cancel.json";
-// import on_update_response from "./jsons/beckn.one:energy:ev-charging/response/on_update.json";
-// import on_rating_response from "./jsons/beckn.one:energy:ev-charging/response/on_rating.json";
-// import on_support_response from "./jsons/beckn.one:energy:ev-charging/response/on_support.json";
+// import on_select_response from "./jsons/beckn.one.energy.ev-charging/response/on_select.json";
+// import on_init_response from "./jsons/beckn.one.energy.ev-charging/response/on_init.json";
+// import on_confirm_response from "./jsons/beckn.one.energy.ev-charging/response/on_confirm.json";
+// import on_status_response from "./jsons/beckn.one.energy.ev-charging/response/on_status.json";
+// import on_track_response from "./jsons/beckn.one.energy.ev-charging/response/on_track.json";
+// import on_cancel_response from "./jsons/beckn.one.energy.ev-charging/response/on_cancel.json";
+// import on_update_response from "./jsons/beckn.one.energy.ev-charging/response/on_update.json";
+// import on_rating_response from "./jsons/beckn.one.energy.ev-charging/response/on_rating.json";
+// import on_support_response from "./jsons/beckn.one.energy.ev-charging/response/on_support.json";
 
 // export const onSelect = (req: Request, res: Response) => {
 //   const { context, message }: { context: any; message: any } = req.body;
