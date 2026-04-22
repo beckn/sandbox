@@ -7,7 +7,8 @@ export const normalizeDomain = (domain: string) => {
   if (!domain) {
     return domain;
   }
-  return domain.replace(/:\d+(?:\.\d+)*$/, "");
+  // replace colons with dots for Windows-compatible dir names, then strip version suffix
+  return domain.replace(/:/g, ".").replace(/\.\d+(?:\.\d+)*$/, "");
 };
 
 /**
