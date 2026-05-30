@@ -16,6 +16,14 @@ const getPersona = (): string | undefined => {
   return process.env.PERSONA;
 };
 
+const buildAck = (context: any) => {
+  const version: string = context?.version ?? "";
+  if (version.startsWith("2.")) {
+    return { message: { status: "ACK", messageId: context?.messageId ?? context?.message_id ?? "" } };
+  }
+  return buildAck(context);
+};
+
 const buildResponseContext = (
   context: Record<string, unknown>,
   action: string
@@ -60,7 +68,7 @@ export const onSelect = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onInit = (req: Request, res: Response) => {
@@ -89,7 +97,7 @@ export const onInit = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onConfirm = (req: Request, res: Response) => {
@@ -118,7 +126,7 @@ export const onConfirm = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onStatus = (req: Request, res: Response) => {
@@ -147,7 +155,7 @@ export const onStatus = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onUpdate = (req: Request, res: Response) => {
@@ -176,7 +184,7 @@ export const onUpdate = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onRating = (req: Request, res: Response) => {
@@ -206,7 +214,7 @@ export const onRating = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onRate = (req: Request, res: Response) => {
@@ -236,7 +244,7 @@ export const onRate = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onSupport = (req: Request, res: Response) => {
@@ -265,7 +273,7 @@ export const onSupport = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onTrack = (req: Request, res: Response) => {
@@ -294,7 +302,7 @@ export const onTrack = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const onCancel = (req: Request, res: Response) => {
@@ -323,7 +331,7 @@ export const onCancel = (req: Request, res: Response) => {
       return;
     }
   })();
-  return res.status(200).json({message: {ack: {status: "ACK"}}});
+  return res.status(200).json(buildAck(context));
 };
 
 export const triggerOnStatus = async (req: Request, res: Response) => {
@@ -344,7 +352,7 @@ export const triggerOnStatus = async (req: Request, res: Response) => {
     console.log(error);
   }
 
-  return res.status(200).json({ message: { ack: { status: "ACK" } } });
+  return res.status(200).json(buildAck(context));
 };
 
 export const triggerOnUpdate = async (req: Request, res: Response) => {
@@ -363,7 +371,7 @@ export const triggerOnUpdate = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.log(error);
   }
-  return res.status(200).json({ message: { ack: { status: "ACK" } } });
+  return res.status(200).json(buildAck(context));
 };
 
 export const triggerOnCancel = async (req: Request, res: Response) => {
@@ -383,5 +391,5 @@ export const triggerOnCancel = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.log(error);
   }
-  return res.status(200).json({ message: { ack: { status: "ACK" } } });
+  return res.status(200).json(buildAck(context));
 };
