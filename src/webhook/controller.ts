@@ -17,11 +17,7 @@ const getPersona = (): string | undefined => {
 };
 
 const buildAck = (context: any) => {
-  const version: string = context?.version ?? "";
-  if (version.startsWith("2.")) {
-    return { message: { status: "ACK", messageId: context?.messageId ?? context?.message_id ?? "" } };
-  }
-  return buildAck(context);
+  return { message: { status: "ACK", messageId: context?.messageId ?? context?.message_id ?? "" } };
 };
 
 const buildResponseContext = (

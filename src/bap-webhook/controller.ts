@@ -2,11 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 
 const buildAck = (context: any) => {
-  const version: string = context?.version ?? "";
-  if (version.startsWith("2.")) {
-    return { message: { status: "ACK", messageId: context?.messageId ?? context?.message_id ?? "" } };
-  }
-  return { message: { ack: { status: "ACK" } } };
+  return { message: { status: "ACK", messageId: context?.messageId ?? context?.message_id ?? "" } };
 };
 
 export const onSelect = (req: Request, res: Response) => {
