@@ -13,6 +13,14 @@ export const onSelect = (req: Request, res: Response) => {
   return res.status(200).json(buildAck(context));
 };
 
+export const onDiscover = (req: Request, res: Response) => {
+  const { context, message }: { context: any; message: any } = req.body;
+  
+  console.log(JSON.stringify({message, context}, null, 2));
+
+  return res.status(200).json(buildAck(context));
+};
+
 export const onInit = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
   
