@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import {
+  onDiscover,
   onSelect,
   onInit,
   onConfirm,
@@ -15,6 +16,7 @@ import {
 export const bapWebhookRoutes = () => {
   const router = Router();
 
+  router.post("/on_discover", onDiscover);
   router.post("/on_select", onSelect);
   router.post("/on_init", onInit);
   router.post("/on_confirm", onConfirm);

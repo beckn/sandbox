@@ -67,6 +67,35 @@ export const onSelect = (req: Request, res: Response) => {
   return res.status(200).json(buildAck(context));
 };
 
+export const onDiscover = (req: Request, res: Response) => {
+  const { context, message }: { context: any; message: any } = req.body;
+  // on_discover_response.context = { ...context, action: "on_discover" };
+  (async () => {
+    try {
+      const template = await readDomainResponse(resolveDomain(context), "on_discover", getPersona());
+      const responsePayload = {
+        ...template,
+        context: buildResponseContext(context, "discover"),
+      };
+      const callbackUrl = getCallbackUrl(context, "discover");
+      console.log(
+        "Triggering On Discover response to:",
+        callbackUrl
+      );
+      const discover_data = await axios.post(
+        callbackUrl,
+        responsePayload
+      );
+      console.log("On Discover api call response: ", discover_data.data);
+    } catch (error: any) {
+      console.log(error);
+    } finally {
+      return;
+    }
+  })();
+  return res.status(200).json(buildAck(context));
+};
+
 export const onInit = (req: Request, res: Response) => {
   const { context, message }: { context: any; message: any } = req.body;
   // on_init_response.context = { ...context, action: "on_init" };
