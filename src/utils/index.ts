@@ -19,6 +19,23 @@ export const resolveDomain = (context: any): string => {
   return context.domain || context.network_id || context.networkId;
 };
 
+/**
+ * Replaces {{VAR}} / {{VAR:-default}} placeholders in a fixture with the value
+ * of environment variable VAR, falling back to the inline default (or leaving
+ * the placeholder untouched if neither is set). Lets a mounted response fixture
+ * be re-pointed via env without editing the file, e.g.:
+ *   "ledgerUri": "{{SELLER_LEDGER_URI:-http://seller-discom-ledger.example.com:9000}}"
+ */
+const substituteEnvVars = (contents: string): string =>
+  contents.replace(
+    /\{\{(\w+)(?::-([^}]*))?\}\}/g,
+    (match, key: string, fallback?: string) => {
+      const value = process.env[key];
+      if (value !== undefined && value !== "") return value;
+      return fallback !== undefined ? fallback : match;
+    }
+  );
+
 export const readDomainResponse = async (
   domain: string,
   action: string,
@@ -38,7 +55,7 @@ export const readDomainResponse = async (
 
     try {
       const fileContents = readFileSync(personaPath, "utf-8");
-      const parsed = JSON.parse(fileContents);
+      const parsed = JSON.parse(substituteEnvVars(fileContents));
       return parsed;
     } catch (error: any) {
       if (error?.code !== "ENOENT") {
